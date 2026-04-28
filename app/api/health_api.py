@@ -1,12 +1,13 @@
 from fastapi import APIRouter
+from pymongo.errors import PyMongoError
 from app.db.mongo import db
 
 router = APIRouter()
 
 @router.get("/health")
-def health_check():
+async def health_check():
     try:
-        db.command("ping")
+        await db.command("ping")
         return {"status": "MongoDB connected"}
-    except:
+    except PyMongoError:
         return {"status": "MongoDB failed"}
