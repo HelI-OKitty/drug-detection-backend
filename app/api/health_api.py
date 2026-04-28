@@ -4,9 +4,9 @@ from app.db.mongo import db
 router = APIRouter()
 
 @router.get("/health")
-def health_check():
+async def health_check():
     try:
-        db.command("ping")
+        await db.command("ping")
         return {"status": "MongoDB connected"}
-    except:
+    except Exception:
         return {"status": "MongoDB failed"}
