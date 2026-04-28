@@ -1,11 +1,5 @@
 from pymongo import MongoClient
-import os
-from dotenv import load_dotenv
+from app.core.config import settings
 
-load_dotenv()
-
-MONGO_URI = os.getenv("MONGO_URI")
-DB_NAME = os.getenv("DB_NAME")
-
-client = MongoClient(MONGO_URI)
-db = client[DB_NAME]
+client = MongoClient(settings.MONGO_URI)
+db = client[settings.DB_NAME]
