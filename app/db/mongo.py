@@ -12,3 +12,4 @@ async def create_indexes():
         [("admin_id", ASCENDING), ("detected_at", ASCENDING)],
     )
     await db.detections.create_index("review_status")
+    await db.configs.create_index("key", unique=True)
