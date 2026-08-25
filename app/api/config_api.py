@@ -27,7 +27,10 @@ async def set_threshold(body: ThresholdConfig, _: str = Depends(get_current_admi
 async def get_weights(_: str = Depends(get_current_admin)):
     doc = await db.configs.find_one({"key": "weights"})
     if doc:
-        return WeightsConfig(text_weight=doc["text_weight"], image_weight=doc["image_weight"])
+        return WeightsConfig(
+            text_weight=doc["text_weight"],
+            image_weight=doc["image_weight"],
+        )
     return WeightsConfig(text_weight=0.5, image_weight=0.5)
 
 

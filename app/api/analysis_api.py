@@ -40,7 +40,11 @@ async def analyze_image(
     )
 
 
-@router.post("/multimodal", response_model=AnalysisResult, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/multimodal",
+    response_model=AnalysisResult,
+    status_code=status.HTTP_201_CREATED,
+)
 async def analyze_multimodal(
     body: AnalysisMultimodalRequest,
     admin_id: str = Depends(get_current_admin),

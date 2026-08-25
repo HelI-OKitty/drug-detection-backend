@@ -43,7 +43,10 @@ async def get_detection(
 ):
     doc = await db.detections.find_one({"_id": ObjectId(detection_id)})
     if not doc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="탐지 결과를 찾을 수 없습니다")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="탐지 결과를 찾을 수 없습니다",
+        )
     return _to_out(doc)
 
 
@@ -59,7 +62,10 @@ async def update_review_status(
         return_document=ReturnDocument.AFTER,
     )
     if not doc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="탐지 결과를 찾을 수 없습니다")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="탐지 결과를 찾을 수 없습니다",
+        )
     return _to_out(doc)
 
 
@@ -70,4 +76,7 @@ async def delete_detection(
 ):
     result = await db.detections.delete_one({"_id": ObjectId(detection_id)})
     if result.deleted_count == 0:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="탐지 결과를 찾을 수 없습니다")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="탐지 결과를 찾을 수 없습니다",
+        )

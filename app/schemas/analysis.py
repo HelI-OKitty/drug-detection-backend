@@ -2,19 +2,19 @@ from pydantic import BaseModel, Field
 
 
 class AnalysisTextRequest(BaseModel):
-    source_url: str = Field(..., description="원본 URL", examples=["https://example.com/post/1"])
-    content: str = Field(..., description="분석할 텍스트", examples=["의심 게시글 내용"])
+    source_url: str = Field(..., description="원본 URL")
+    content: str = Field(..., description="분석할 텍스트")
 
 
 class AnalysisImageRequest(BaseModel):
-    source_url: str = Field(..., description="원본 URL", examples=["https://example.com/post/1"])
-    image_url: str = Field(..., description="이미지 URL", examples=["https://img.example.com/1.jpg"])
+    source_url: str = Field(..., description="원본 URL")
+    image_url: str = Field(..., description="이미지 URL")
 
 
 class AnalysisMultimodalRequest(BaseModel):
-    source_url: str = Field(..., description="원본 URL", examples=["https://example.com/post/1"])
-    content: str = Field(..., description="분석할 텍스트", examples=["의심 게시글 내용"])
-    image_url: str = Field(..., description="이미지 URL", examples=["https://img.example.com/1.jpg"])
+    source_url: str = Field(..., description="원본 URL")
+    content: str = Field(..., description="분석할 텍스트")
+    image_url: str = Field(..., description="이미지 URL")
 
 
 class AnalysisResult(BaseModel):
