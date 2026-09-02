@@ -13,3 +13,7 @@ async def create_indexes():
     )
     await db.detections.create_index("review_status")
     await db.configs.create_index("key", unique=True)
+    await db.revoked_tokens.create_index(
+        "expires_at",
+        expireAfterSeconds=0,
+    )
