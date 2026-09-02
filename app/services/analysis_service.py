@@ -42,7 +42,9 @@ async def analyze_and_save(
     threshold = await get_threshold()
     weights = await get_weights()
 
-    final_score = late_fusion(text_score, image_score, weights["text"], weights["image"])
+    final_score = late_fusion(
+        text_score, image_score, weights["text"], weights["image"]
+    )
 
     doc = {
         "source_url": source_url,

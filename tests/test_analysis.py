@@ -27,8 +27,13 @@ def make_result(text_score=None, image_score=None) -> dict:
 async def test_analyze_text():
     app.dependency_overrides[get_current_admin] = mock_admin
 
-    with patch("app.api.analysis_api.analyze_and_save", AsyncMock(return_value=make_result(text_score=0.6))):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    mock_result = make_result(text_score=0.6)
+    with patch(
+        "app.api.analysis_api.analyze_and_save", AsyncMock(return_value=mock_result)
+    ):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             resp = await client.post(
                 "/analysis/text",
                 json={"source_url": "https://example.com/1", "content": "의심 텍스트"},
@@ -43,11 +48,19 @@ async def test_analyze_text():
 async def test_analyze_image():
     app.dependency_overrides[get_current_admin] = mock_admin
 
-    with patch("app.api.analysis_api.analyze_and_save", AsyncMock(return_value=make_result(image_score=0.7))):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    mock_result = make_result(image_score=0.7)
+    with patch(
+        "app.api.analysis_api.analyze_and_save", AsyncMock(return_value=mock_result)
+    ):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             resp = await client.post(
                 "/analysis/image",
-                json={"source_url": "https://example.com/1", "image_url": "https://img.example.com/1.jpg"},
+                json={
+                    "source_url": "https://example.com/1",
+                    "image_url": "https://img.example.com/1.jpg",
+                },
                 headers={"Authorization": "Bearer token"},
             )
 
@@ -58,8 +71,13 @@ async def test_analyze_image():
 async def test_analyze_multimodal():
     app.dependency_overrides[get_current_admin] = mock_admin
 
-    with patch("app.api.analysis_api.analyze_and_save", AsyncMock(return_value=make_result(text_score=0.6, image_score=0.7))):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    mock_result = make_result(text_score=0.6, image_score=0.7)
+    with patch(
+        "app.api.analysis_api.analyze_and_save", AsyncMock(return_value=mock_result)
+    ):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             resp = await client.post(
                 "/analysis/multimodal",
                 json={
@@ -75,11 +93,15 @@ async def test_analyze_multimodal():
 
 
 def test_late_fusion_text_only():
-    score = late_fusion(text_score=0.8, image_score=None, text_weight=0.5, image_weight=0.5)
+    score = late_fusion(
+        text_score=0.8, image_score=None, text_weight=0.5, image_weight=0.5
+    )
     assert score == 0.8
 
 
 def test_late_fusion_weighted():
-    score = late_fusion(text_score=0.8, image_score=0.4, text_weight=0.6, image_weight=0.4)
+    score = late_fusion(
+        text_score=0.8, image_score=0.4, text_weight=0.6, image_weight=0.4
+    )
     expected = (0.8 * 0.6 + 0.4 * 0.4) / (0.6 + 0.4)
     assert abs(score - expected) < 1e-9

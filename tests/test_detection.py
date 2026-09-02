@@ -35,8 +35,12 @@ async def test_list_detections():
 
     with patch("app.api.detection_api.db") as mock_db:
         mock_db.detections.find.return_value.sort.return_value = fake_cursor()
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            resp = await client.get("/detections", headers={"Authorization": "Bearer token"})
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            resp = await client.get(
+                "/detections", headers={"Authorization": "Bearer token"}
+            )
 
     app.dependency_overrides.clear()
     assert resp.status_code == 200
@@ -48,7 +52,9 @@ async def test_get_detection_not_found():
 
     with patch("app.api.detection_api.db") as mock_db:
         mock_db.detections.find_one = AsyncMock(return_value=None)
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             resp = await client.get(
                 f"/detections/{FAKE_ID}", headers={"Authorization": "Bearer token"}
             )
@@ -64,7 +70,9 @@ async def test_update_review_status():
 
     with patch("app.api.detection_api.db") as mock_db:
         mock_db.detections.find_one_and_update = AsyncMock(return_value=doc)
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             resp = await client.patch(
                 f"/detections/{FAKE_ID}/status",
                 json={"review_status": "confirmed"},
@@ -83,7 +91,9 @@ async def test_delete_detection():
 
     with patch("app.api.detection_api.db") as mock_db:
         mock_db.detections.delete_one = AsyncMock(return_value=mock_result)
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
             resp = await client.delete(
                 f"/detections/{FAKE_ID}", headers={"Authorization": "Bearer token"}
             )
