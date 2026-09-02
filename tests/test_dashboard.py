@@ -8,6 +8,8 @@ from app.core.security import get_current_admin
 from app.main import app
 
 FAKE_ADMIN_ID = "665abc1234567890abcdef01"
+BASE_URL = "http://test"
+AUTH = {"Authorization": "Bearer token"}
 
 
 def mock_admin():
@@ -19,9 +21,7 @@ def make_summary() -> dict:
         "total": 42,
         "today": 5,
         "unconfirmed": 10,
-        "trend": [
-            {"date": f"2026-08-{20+i:02d}", "count": i + 1} for i in range(7)
-        ],
+        "trend": [{"date": f"2026-08-{20 + i:02d}", "count": i + 1} for i in range(7)],
     }
 
 
@@ -38,9 +38,13 @@ def make_detection(detection_id=None) -> dict:
 async def test_dashboard_summary():
     app.dependency_overrides[get_current_admin] = mock_admin
 
-    with patch("app.api.dashboard_api.get_summary", AsyncMock(return_value=make_summary())):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            resp = await client.get("/dashboard/summary", headers={"Authorization": "Bearer token"})
+    with patch(
+        "app.api.dashboard_api.get_summary", AsyncMock(return_value=make_summary())
+    ):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url=BASE_URL
+        ) as client:
+            resp = await client.get("/dashboard/summary", headers=AUTH)
 
     app.dependency_overrides.clear()
     assert resp.status_code == 200
@@ -56,8 +60,10 @@ async def test_dashboard_summary_counts():
     summary = make_summary()
 
     with patch("app.api.dashboard_api.get_summary", AsyncMock(return_value=summary)):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            resp = await client.get("/dashboard/summary", headers={"Authorization": "Bearer token"})
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url=BASE_URL
+        ) as client:
+            resp = await client.get("/dashboard/summary", headers=AUTH)
 
     app.dependency_overrides.clear()
     data = resp.json()
@@ -71,8 +77,10 @@ async def test_dashboard_recent():
     items = [make_detection() for _ in range(5)]
 
     with patch("app.api.dashboard_api.get_recent", AsyncMock(return_value=items)):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            resp = await client.get("/dashboard/recent", headers={"Authorization": "Bearer token"})
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url=BASE_URL
+        ) as client:
+            resp = await client.get("/dashboard/recent", headers=AUTH)
 
     app.dependency_overrides.clear()
     assert resp.status_code == 200
@@ -84,10 +92,10 @@ async def test_dashboard_recent_limit():
     items = [make_detection() for _ in range(3)]
 
     with patch("app.api.dashboard_api.get_recent", AsyncMock(return_value=items)):
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            resp = await client.get(
-                "/dashboard/recent?limit=3", headers={"Authorization": "Bearer token"}
-            )
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url=BASE_URL
+        ) as client:
+            resp = await client.get("/dashboard/recent?limit=3", headers=AUTH)
 
     app.dependency_overrides.clear()
     assert resp.status_code == 200

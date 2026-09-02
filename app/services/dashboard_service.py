@@ -28,7 +28,9 @@ async def get_summary(admin_id: str) -> dict:
 
 
 async def get_recent(admin_id: str, limit: int = 10) -> list[dict]:
-    cursor = db.detections.find({"admin_id": admin_id}).sort("detected_at", -1).limit(limit)
+    cursor = (
+        db.detections.find({"admin_id": admin_id}).sort("detected_at", -1).limit(limit)
+    )
     return [
         {
             "id": str(doc["_id"]),
