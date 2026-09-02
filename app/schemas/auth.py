@@ -7,6 +7,11 @@ class Token(BaseModel):
         description="JWT 액세스 토큰",
         examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
     )
+    refresh_token: str = Field(
+        ...,
+        description="JWT 리프레시 토큰",
+        examples=["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."],
+    )
     token_type: str = Field(
         default="bearer",
         description="토큰 타입",

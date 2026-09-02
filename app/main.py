@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
+from app.api.auth_api import router as auth_router
 from app.api.health_api import router as health_router
 from app.db.mongo import create_indexes
 
@@ -16,6 +17,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(health_router)
+app.include_router(auth_router)
 
 
 @app.exception_handler(HTTPException)
