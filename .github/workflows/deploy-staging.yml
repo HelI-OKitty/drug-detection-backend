@@ -35,4 +35,4 @@ jobs:
             --region asia-northeast3 \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars MONGO_URI=${{ secrets.MONGO_URI }},JWT_SECRET=${{ secrets.JWT_SECRET }},DB_NAME=drug_db
+            --set-env-vars MONGO_URI=${{ secrets.MONGO_URI }},JWT_SECRET=${{ secrets.JWT_SECRET }},DB_NAME=drug_db,CORS_ORIGINS=["*"]
