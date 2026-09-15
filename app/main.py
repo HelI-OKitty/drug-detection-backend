@@ -10,6 +10,7 @@ from app.api.config_api import router as config_router
 from app.api.dashboard_api import router as dashboard_router
 from app.api.detection_api import router as detection_router
 from app.api.health_api import router as health_router
+from app.api.public_api import router as public_router
 from app.core.config import settings
 from app.db.mongo import create_indexes
 
@@ -36,6 +37,7 @@ app.include_router(detection_router)
 app.include_router(analysis_router)
 app.include_router(config_router)
 app.include_router(dashboard_router)
+app.include_router(public_router)
 
 
 @app.exception_handler(HTTPException)
