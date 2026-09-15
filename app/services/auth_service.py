@@ -1,7 +1,6 @@
 import hashlib
 from datetime import datetime, timezone
 
-from bson import ObjectId
 from fastapi import HTTPException, status
 from pymongo.errors import DuplicateKeyError
 
@@ -13,7 +12,7 @@ from app.core.security import (
     verify_password,
 )
 from app.db.mongo import db
-from app.schemas.admin import AdminCreate, AdminLogin, AdminOut, AdminUpdate
+from app.schemas.admin import AdminCreate, AdminLogin, AdminOut
 from app.schemas.auth import Token
 
 
@@ -26,6 +25,9 @@ def _doc_to_admin_out(doc: dict) -> AdminOut:
         id=str(doc["_id"]),
         email=doc["email"],
         name=doc["name"],
+        site_url=doc.get("site_url"),
+        notification_enabled=doc.get("notification_enabled", False),
+        notification_email=doc.get("notification_email"),
         created_at=doc["created_at"],
     )
 
@@ -98,56 +100,3 @@ async def logout(refresh_token: str) -> None:
         {"$setOnInsert": {"token_hash": token_hash, "expires_at": expires_at}},
         upsert=True,
     )
-
-
-async def get_admin(admin_id: str) -> AdminOut:
-    try:
-        oid = ObjectId(admin_id)
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="관리자를 찾을 수 없습니다",
-        )
-    doc = await db.admins.find_one({"_id": oid})
-    if doc is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="관리자를 찾을 수 없습니다",
-        )
-    return _doc_to_admin_out(doc)
-
-
-async def update_admin(admin_id: str, data: AdminUpdate) -> AdminOut:
-    try:
-        oid = ObjectId(admin_id)
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="관리자를 찾을 수 없습니다",
-        )
-    update_fields: dict = {}
-    if data.name is not None:
-        update_fields["name"] = data.name
-    if data.password is not None:
-        update_fields["password"] = hash_password(data.password)
-
-    if not update_fields:
-        doc = await db.admins.find_one({"_id": oid})
-        if doc is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="관리자를 찾을 수 없습니다",
-            )
-        return _doc_to_admin_out(doc)
-
-    result = await db.admins.find_one_and_update(
-        {"_id": oid},
-        {"$set": update_fields},
-        return_document=True,
-    )
-    if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="관리자를 찾을 수 없습니다",
-        )
-    return _doc_to_admin_out(result)
