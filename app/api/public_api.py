@@ -13,7 +13,6 @@ router = APIRouter(prefix="/public", tags=["public"])
     status_code=status.HTTP_200_OK,
 )
 async def public_analyze(body: PublicAnalyzeRequest):
-
     image_prediction: int = 0
     detected_objects: list[DetectedObject] | None = None
     ocr_text: str | None = None
