@@ -10,7 +10,9 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
     TEXT_AI_URL: str = ""
-    IMAGE_AI_URL: str = ""  # TODO: 이미지 AI 서버 주소 확정 후 .env에 추가
+    TEXT_AI_API_KEY: str = ""
+    IMAGE_AI_URL: str = ""
+    IMAGE_AI_API_KEY: str = ""
 
     model_config = {"env_file": ".env"}
 
