@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from typing import Literal
+
+from pydantic import BaseModel, Field
 
 
 class TextAIResponse(BaseModel):
@@ -16,6 +18,14 @@ class TextAIResponse(BaseModel):
     matched_intents: list[str]
 
 
-# TODO: 이미지 AI 응답 구조 확정 후 추가
-# class ImageAIResponse(BaseModel):
-#     ...
+class DetectedObject(BaseModel):
+    class_name: str
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+class ImageAIResponse(BaseModel):
+    success: Literal[True] = True
+    prediction: int  # 0: 비마약, 1: 마약
+    image_score: float = Field(ge=0.0, le=1.0)
+    detected_objects: list[DetectedObject]
+    ocr_text: str
