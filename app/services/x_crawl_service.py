@@ -14,7 +14,10 @@ import httpx
 from app.core.config import settings
 from app.core.keywords import DRUG_KEYWORDS
 
+KST = timezone(timedelta(hours=9))
+
 X_SEARCH_URL = "https://api.x.com/2/tweets/search/recent"
+X_TWEET_URL = "https://api.x.com/2/tweets"
 PLATFORM = "x"
 CRAWL_DAYS = 3  # 테스트 기간, 이후 조정
 CRAWL_LIMIT: int | None = 1  # 키워드당 최대 수집 건수, None이면 전체 수집
@@ -80,7 +83,7 @@ class ParsedPost:
     source_url: str
     content: str
     created_at_source: datetime
-    author_name: str
+    author_id: str
     image_urls: list[str] = field(default_factory=list)
     image_b64s: list[str] = field(default_factory=list)
 
@@ -103,6 +106,35 @@ async def crawl_all_keywords(
         results[keyword] = await crawl_keyword(keyword, limit=effective_limit)
 
     return results
+
+
+async def fetch_tweet_by_url(url: str) -> ParsedPost:
+    """트윗 URL로 단건 조회하여 ParsedPost 반환"""
+    tweet_id = url.rstrip("/").split("/")[-1]
+    params = {
+        "tweet.fields": ",".join(TWEET_FIELDS),
+        "expansions": ",".join(EXPANSIONS),
+        "user.fields": ",".join(USER_FIELDS),
+        "media.fields": ",".join(MEDIA_FIELDS),
+    }
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.get(
+            f"{X_TWEET_URL}/{tweet_id}",
+            headers={"Authorization": f"Bearer {settings.X_BEARER_TOKEN}"},
+            params=params,
+        )
+        if resp.status_code != 200:
+            raise RuntimeError(f"X API 오류 {resp.status_code}: {resp.text}")
+
+        data = resp.json()
+        tweet = data["data"]
+        includes = data.get("includes", {})
+        users = {u["id"]: u for u in includes.get("users", [])}
+        media_map = {m["media_key"]: m for m in includes.get("media", [])}
+
+        post = _parse_tweet(tweet, users, media_map)
+        post.image_b64s = await _download_images(post.image_urls)
+        return post
 
 
 def _build_query(keyword: str, lang: str = "ko", exclude_retweets: bool = True) -> str:
@@ -172,7 +204,9 @@ async def crawl_keyword(
             media_map = {m["media_key"]: m for m in includes.get("media", [])}
 
             for tweet in tweets:
-                posts.append(_parse_tweet(tweet, users, media_map))
+                post = _parse_tweet(tweet, users, media_map)
+                post.image_b64s = await _download_images(post.image_urls)
+                posts.append(post)
                 if limit and len(posts) >= limit:
                     break
 
@@ -182,9 +216,6 @@ async def crawl_keyword(
             next_token = data.get("meta", {}).get("next_token")
             if not next_token:
                 break
-
-    for post in posts:
-        post.image_b64s = await _download_images(post.image_urls)
 
     return posts
 
@@ -204,8 +235,8 @@ def _parse_tweet(
         content=tweet["text"],
         created_at_source=datetime.fromisoformat(
             tweet["created_at"].replace("Z", "+00:00")
-        ),
-        author_name=username,
+        ).astimezone(KST),
+        author_id=username,
         image_urls=_extract_image_urls(tweet, media_map),
     )
 

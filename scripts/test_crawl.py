@@ -17,7 +17,11 @@ from pathlib import Path
 # 프로젝트 루트를 path에 추가
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.services.x_crawl_service import ParsedPost, crawl_all_keywords
+from app.services.x_crawl_service import (
+    ParsedPost,
+    crawl_all_keywords,
+    fetch_tweet_by_url,
+)
 
 
 def post_to_dict(post: ParsedPost) -> dict:
@@ -27,21 +31,28 @@ def post_to_dict(post: ParsedPost) -> dict:
         "source_url": post.source_url,
         "content": post.content,
         "created_at_source": post.created_at_source.isoformat(),
-        "author_name": post.author_name,
+        "author_id": post.author_id,
         "image_urls": post.image_urls,
         "image_b64s_count": len(post.image_b64s),
     }
 
 
 async def run(
-    keyword: str | None, out_path: str | None, limit: int | None = None
+    keyword: str | None,
+    out_path: str | None,
+    limit: int | None = None,
+    url: str | None = None,
 ) -> None:
-    keywords = [keyword] if keyword else None  # None이면 DRUG_KEYWORDS 전체
-
     print("크롤링 시작...", flush=True)
-    raw = await crawl_all_keywords(keywords, limit=limit)
 
-    results = {kw: [post_to_dict(p) for p in posts] for kw, posts in raw.items()}
+    if url:
+        post = await fetch_tweet_by_url(url)
+        results = {"url": [post_to_dict(post)]}
+    else:
+        keywords = [keyword] if keyword else None  # None이면 DRUG_KEYWORDS 전체
+        raw = await crawl_all_keywords(keywords, limit=limit)
+        results = {kw: [post_to_dict(p) for p in posts] for kw, posts in raw.items()}
+
     total = sum(len(v) for v in results.values())
 
     for kw, posts in results.items():
@@ -73,9 +84,13 @@ def parse_args() -> argparse.Namespace:
         type=int,
         help="키워드당 최대 수집 건수 (미입력 시 전체 수집)",
     )
+    parser.add_argument(
+        "--url",
+        help="트윗 URL 단건 조회 (입력 시 --keyword, --limit 무시)",
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    asyncio.run(run(args.keyword, args.out, args.limit))
+    asyncio.run(run(args.keyword, args.out, args.limit, args.url))
