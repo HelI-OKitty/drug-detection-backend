@@ -120,7 +120,7 @@ def _build_params(query: str, next_token: str | None = None) -> dict:
     )
     params: dict = {
         "query": query,
-        "max_results": 100,
+        "max_results": 10,
         "start_time": start_time,
         "tweet.fields": ",".join(TWEET_FIELDS),
         "expansions": ",".join(EXPANSIONS),
