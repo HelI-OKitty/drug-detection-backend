@@ -34,7 +34,7 @@ def make_detection(detection_id=None) -> dict:
         "content": "의심 게시글",
         "created_at_source": datetime.now(timezone.utc),
         "keyword": "마약",
-        "author_name": "testuser",
+        "author_id": "testuser",
         "score": 0.85,
         "review_status": "unreviewed",
         "detected_at": datetime.now(timezone.utc),
