@@ -18,10 +18,17 @@ def mock_admin():
 def make_doc(detection_id: str | None = None) -> dict:
     return {
         "_id": ObjectId(detection_id) if detection_id else ObjectId(),
-        "source_url": "https://example.com/post/1",
+        "platform": "x",
+        "source_id": "1234567890",
+        "source_url": "https://x.com/testuser/status/1234567890",
         "content": "의심 게시글",
+        "created_at_source": datetime.now(timezone.utc),
+        "keyword": "마약",
+        "author_name": "testuser",
         "score": 0.85,
-        "review_status": "pending",
+        "review_status": "unreviewed",
+        "text_ai_result": None,
+        "image_ai_results": [],
         "admin_id": FAKE_ADMIN_ID,
         "detected_at": datetime.now(timezone.utc),
     }
@@ -66,7 +73,7 @@ async def test_get_detection_not_found():
 async def test_update_review_status():
     app.dependency_overrides[get_current_admin] = mock_admin
     doc = make_doc(FAKE_ID)
-    doc["review_status"] = "confirmed"
+    doc["review_status"] = "reviewing"
 
     with patch("app.api.detection_api.db") as mock_db:
         mock_db.detections.find_one_and_update = AsyncMock(return_value=doc)
@@ -75,13 +82,13 @@ async def test_update_review_status():
         ) as client:
             resp = await client.patch(
                 f"/detections/{FAKE_ID}/status",
-                json={"review_status": "confirmed"},
+                json={"review_status": "reviewing"},
                 headers={"Authorization": "Bearer token"},
             )
 
     app.dependency_overrides.clear()
     assert resp.status_code == 200
-    assert resp.json()["review_status"] == "confirmed"
+    assert resp.json()["review_status"] == "reviewing"
 
 
 async def test_delete_detection():
