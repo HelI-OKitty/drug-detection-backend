@@ -13,9 +13,53 @@ import httpx
 
 from app.core.config import settings
 
-X_SEARCH_URL = "https://api.twitter.com/2/tweets/search/recent"
+X_SEARCH_URL = "https://api.x.com/2/tweets/search/recent"
 PLATFORM = "x"
 CRAWL_DAYS = 3  # 테스트 기간, 이후 조정
+
+TWEET_FIELDS = [
+    "id",
+    "text",
+    "author_id",
+    "created_at",
+    "lang",
+    "public_metrics",
+    "possibly_sensitive",
+    "conversation_id",
+    "referenced_tweets",
+    "entities",
+    "attachments",
+    "edit_history_tweet_ids",
+]
+
+EXPANSIONS = [
+    "author_id",
+    "attachments.media_keys",
+    "referenced_tweets.id",
+    "referenced_tweets.id.author_id",
+]
+
+USER_FIELDS = [
+    "id",
+    "name",
+    "username",
+    "created_at",
+    "description",
+    "profile_image_url",
+    "verified",
+    "public_metrics",
+]
+
+MEDIA_FIELDS = [
+    "media_key",
+    "type",
+    "url",
+    "preview_image_url",
+    "width",
+    "height",
+    "duration_ms",
+    "public_metrics",
+]
 
 
 @dataclass
@@ -29,31 +73,46 @@ class ParsedPost:
     created_at_source: datetime
     author_name: str
     image_urls: list[str] = field(default_factory=list)
-    image_b64s: list[str] = field(default_factory=list)  # 다운로드된 이미지 base64
+    image_b64s: list[str] = field(default_factory=list)
+
+
+def _build_query(keyword: str, lang: str = "ko", exclude_retweets: bool = True) -> str:
+    query = keyword
+    if lang:
+        query += f" lang:{lang}"
+    if exclude_retweets:
+        query += " -is:retweet"
+    return query
+
+
+def _build_params(query: str, next_token: str | None = None) -> dict:
+    start_time = (datetime.now(timezone.utc) - timedelta(days=CRAWL_DAYS)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    params: dict = {
+        "query": query,
+        "max_results": 100,
+        "start_time": start_time,
+        "tweet.fields": ",".join(TWEET_FIELDS),
+        "expansions": ",".join(EXPANSIONS),
+        "user.fields": ",".join(USER_FIELDS),
+        "media.fields": ",".join(MEDIA_FIELDS),
+    }
+    if next_token:
+        params["next_token"] = next_token
+    return params
 
 
 async def crawl_keyword(keyword: str) -> list[ParsedPost]:
     """키워드로 최근 CRAWL_DAYS일치 트윗을 수집하여 ParsedPost 리스트로 반환"""
-    start_time = (datetime.now(timezone.utc) - timedelta(days=CRAWL_DAYS)).strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
+    query = _build_query(keyword)
     posts: list[ParsedPost] = []
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         next_token: str | None = None
 
         while True:
-            params: dict = {
-                "query": f"{keyword} -is:retweet lang:ko",
-                "max_results": 100,
-                "start_time": start_time,
-                "tweet.fields": "created_at,author_id,attachments,entities",
-                "expansions": "author_id,attachments.media_keys",
-                "user.fields": "username",
-                "media.fields": "url,type,preview_image_url",
-            }
-            if next_token:
-                params["pagination_token"] = next_token
+            params = _build_params(query, next_token=next_token)
 
             resp = await client.get(
                 X_SEARCH_URL,
@@ -81,7 +140,6 @@ async def crawl_keyword(keyword: str) -> list[ParsedPost]:
             if not next_token:
                 break
 
-    # 이미지 다운로드 (각 post의 image_urls → base64)
     for post in posts:
         post.image_b64s = await _download_images(post.image_urls)
 
@@ -96,25 +154,21 @@ def _parse_tweet(
     author = users.get(tweet["author_id"], {})
     username = author.get("username", "")
 
-    source_url = f"https://x.com/{username}/status/{tweet['id']}"
-
-    image_urls = _extract_image_urls(tweet, media_map)
-
     return ParsedPost(
         platform=PLATFORM,
         source_id=tweet["id"],
-        source_url=source_url,
+        source_url=f"https://x.com/{username}/status/{tweet['id']}",
         content=tweet["text"],
         created_at_source=datetime.fromisoformat(
             tweet["created_at"].replace("Z", "+00:00")
         ),
         author_name=username,
-        image_urls=image_urls,
+        image_urls=_extract_image_urls(tweet, media_map),
     )
 
 
 def _extract_image_urls(tweet: dict, media_map: dict[str, dict]) -> list[str]:
-    """트윗에 첨부된 미디어 URL 추출 — photo: url, video/gif: preview_image_url"""
+    """photo: url / video·gif: preview_image_url"""
     media_keys = tweet.get("attachments", {}).get("media_keys", [])
     urls: list[str] = []
 
@@ -122,11 +176,11 @@ def _extract_image_urls(tweet: dict, media_map: dict[str, dict]) -> list[str]:
         media = media_map.get(mk)
         if not media:
             continue
-        if media["type"] == "photo":
-            url = media.get("url")
-        else:
-            # video, animated_gif → 썸네일
-            url = media.get("preview_image_url")
+        url = (
+            media.get("url")
+            if media["type"] == "photo"
+            else media.get("preview_image_url")
+        )
         if url:
             urls.append(url)
 
