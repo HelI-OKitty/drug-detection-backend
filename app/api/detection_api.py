@@ -12,10 +12,15 @@ router = APIRouter(prefix="/detections", tags=["detection"])
 def _to_out(doc: dict) -> DetectionOut:
     return DetectionOut(
         id=str(doc["_id"]),
+        tweet_id=doc["tweet_id"],
         source_url=doc["source_url"],
         content=doc["content"],
+        keyword=doc["keyword"],
+        author_name=doc["author_name"],
         score=doc["score"],
         review_status=doc["review_status"],
+        text_ai_result=doc.get("text_ai_result"),
+        image_ai_results=doc.get("image_ai_results", []),
         admin_id=doc["admin_id"],
         detected_at=doc["detected_at"],
     )
@@ -27,7 +32,11 @@ async def list_detections(admin_id: str = Depends(get_current_admin)):
     return [
         DetectionListItem(
             id=str(doc["_id"]),
+            tweet_id=doc["tweet_id"],
             source_url=doc["source_url"],
+            content=doc["content"],
+            keyword=doc["keyword"],
+            author_name=doc["author_name"],
             score=doc["score"],
             review_status=doc["review_status"],
             detected_at=doc["detected_at"],

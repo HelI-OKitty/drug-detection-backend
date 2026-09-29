@@ -12,6 +12,10 @@ async def create_indexes():
         [("admin_id", ASCENDING), ("detected_at", ASCENDING)],
     )
     await db.detections.create_index("review_status")
+    await db.detections.create_index(
+        [("tweet_id", ASCENDING), ("admin_id", ASCENDING)],
+        unique=True,
+    )
     await db.revoked_tokens.create_index(
         "expires_at",
         expireAfterSeconds=0,
