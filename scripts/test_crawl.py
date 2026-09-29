@@ -2,8 +2,9 @@
 X 크롤링 단독 테스트 스크립트
 
 사용법:
-    python scripts/test_crawl.py                      # DRUG_KEYWORDS 전체
-    python scripts/test_crawl.py --keyword 작대기      # 단일 키워드
+    python scripts/test_crawl.py                               # DRUG_KEYWORDS 전체
+    python scripts/test_crawl.py --keyword 작대기              # 단일 키워드
+    python scripts/test_crawl.py --keyword 작대기 --limit 10   # 최대 10건
     python scripts/test_crawl.py --keyword 작대기 --out result.json
 """
 
@@ -32,11 +33,13 @@ def post_to_dict(post: ParsedPost) -> dict:
     }
 
 
-async def run(keyword: str | None, out_path: str | None) -> None:
+async def run(
+    keyword: str | None, out_path: str | None, limit: int | None = None
+) -> None:
     keywords = [keyword] if keyword else None  # None이면 DRUG_KEYWORDS 전체
 
     print("크롤링 시작...", flush=True)
-    raw = await crawl_all_keywords(keywords)
+    raw = await crawl_all_keywords(keywords, limit=limit)
 
     results = {kw: [post_to_dict(p) for p in posts] for kw, posts in raw.items()}
     total = sum(len(v) for v in results.values())
@@ -65,9 +68,14 @@ def parse_args() -> argparse.Namespace:
         "--out",
         help="결과 저장 경로 (미입력 시 stdout 출력)",
     )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        help="키워드당 최대 수집 건수 (미입력 시 전체 수집)",
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    asyncio.run(run(args.keyword, args.out))
+    asyncio.run(run(args.keyword, args.out, args.limit))

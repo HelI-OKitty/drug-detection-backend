@@ -79,17 +79,19 @@ class ParsedPost:
 
 async def crawl_all_keywords(
     keywords: list[str] | None = None,
+    limit: int | None = None,
 ) -> dict[str, list[ParsedPost]]:
     """키워드 목록을 순차적으로 크롤링하여 키워드별 결과를 반환
 
     keywords 미전달 시 DRUG_KEYWORDS 전체 사용.
+    limit: 키워드당 최대 수집 건수 (None이면 전체 수집)
     추후 키워드별 개별 주기 스케줄링 시 keywords 인자로 제어 가능.
     """
     targets = keywords if keywords is not None else DRUG_KEYWORDS
     results: dict[str, list[ParsedPost]] = {}
 
     for keyword in targets:
-        results[keyword] = await crawl_keyword(keyword)
+        results[keyword] = await crawl_keyword(keyword, limit=limit)
 
     return results
 
@@ -121,8 +123,14 @@ def _build_params(query: str, next_token: str | None = None) -> dict:
     return params
 
 
-async def crawl_keyword(keyword: str) -> list[ParsedPost]:
-    """키워드로 최근 CRAWL_DAYS일치 트윗을 수집하여 ParsedPost 리스트로 반환"""
+async def crawl_keyword(
+    keyword: str,
+    limit: int | None = None,
+) -> list[ParsedPost]:
+    """키워드로 최근 CRAWL_DAYS일치 트윗을 수집하여 ParsedPost 리스트로 반환
+
+    limit: 최대 수집 건수 (None이면 전체 수집)
+    """
     query = _build_query(keyword)
     posts: list[ParsedPost] = []
 
@@ -151,8 +159,12 @@ async def crawl_keyword(keyword: str) -> list[ParsedPost]:
             media_map = {m["media_key"]: m for m in includes.get("media", [])}
 
             for tweet in tweets:
-                post = _parse_tweet(tweet, users, media_map)
-                posts.append(post)
+                posts.append(_parse_tweet(tweet, users, media_map))
+                if limit and len(posts) >= limit:
+                    break
+
+            if limit and len(posts) >= limit:
+                break
 
             next_token = data.get("meta", {}).get("next_token")
             if not next_token:
