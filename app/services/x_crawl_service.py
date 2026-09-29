@@ -222,12 +222,12 @@ def _extract_image_urls(tweet: dict, media_map: dict[str, dict]) -> list[str]:
 async def _download_images(image_urls: list[str]) -> list[str]:
     """이미지 URL 리스트를 base64 문자열 리스트로 변환"""
     b64s: list[str] = []
-    async with httpx.AsyncClient(timeout=15.0) as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         for url in image_urls:
             try:
                 resp = await client.get(url)
                 if resp.status_code == 200:
                     b64s.append(base64.b64encode(resp.content).decode())
-            except httpx.HTTPError:
+            except Exception:
                 continue
     return b64s
