@@ -12,6 +12,7 @@ from datetime import datetime, timedelta, timezone
 import httpx
 
 from app.core.config import settings
+from app.core.keywords import DRUG_KEYWORDS
 
 X_SEARCH_URL = "https://api.x.com/2/tweets/search/recent"
 PLATFORM = "x"
@@ -74,6 +75,23 @@ class ParsedPost:
     author_name: str
     image_urls: list[str] = field(default_factory=list)
     image_b64s: list[str] = field(default_factory=list)
+
+
+async def crawl_all_keywords(
+    keywords: list[str] | None = None,
+) -> dict[str, list[ParsedPost]]:
+    """키워드 목록을 순차적으로 크롤링하여 키워드별 결과를 반환
+
+    keywords 미전달 시 DRUG_KEYWORDS 전체 사용.
+    추후 키워드별 개별 주기 스케줄링 시 keywords 인자로 제어 가능.
+    """
+    targets = keywords if keywords is not None else DRUG_KEYWORDS
+    results: dict[str, list[ParsedPost]] = {}
+
+    for keyword in targets:
+        results[keyword] = await crawl_keyword(keyword)
+
+    return results
 
 
 def _build_query(keyword: str, lang: str = "ko", exclude_retweets: bool = True) -> str:

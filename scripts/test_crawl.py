@@ -16,8 +16,7 @@ from pathlib import Path
 # 프로젝트 루트를 path에 추가
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.core.keywords import DRUG_KEYWORDS
-from app.services.x_crawl_service import ParsedPost, crawl_keyword
+from app.services.x_crawl_service import ParsedPost, crawl_all_keywords
 
 
 def post_to_dict(post: ParsedPost) -> dict:
@@ -29,20 +28,21 @@ def post_to_dict(post: ParsedPost) -> dict:
         "created_at_source": post.created_at_source.isoformat(),
         "author_name": post.author_name,
         "image_urls": post.image_urls,
-        "image_b64s_count": len(post.image_b64s),  # base64는 길어서 개수만 출력
+        "image_b64s_count": len(post.image_b64s),
     }
 
 
-async def run(keywords: list[str], out_path: str | None) -> None:
-    results: dict[str, list[dict]] = {}
+async def run(keyword: str | None, out_path: str | None) -> None:
+    keywords = [keyword] if keyword else None  # None이면 DRUG_KEYWORDS 전체
 
-    for keyword in keywords:
-        print(f"[{keyword}] 크롤링 중...", flush=True)
-        posts = await crawl_keyword(keyword)
-        results[keyword] = [post_to_dict(p) for p in posts]
-        print(f"[{keyword}] {len(posts)}건 수집", flush=True)
+    print("크롤링 시작...", flush=True)
+    raw = await crawl_all_keywords(keywords)
 
+    results = {kw: [post_to_dict(p) for p in posts] for kw, posts in raw.items()}
     total = sum(len(v) for v in results.values())
+
+    for kw, posts in results.items():
+        print(f"  [{kw}] {len(posts)}건", flush=True)
     print(f"\n총 {total}건 수집 완료")
 
     if out_path:
@@ -70,5 +70,4 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
     args = parse_args()
-    keywords = [args.keyword] if args.keyword else DRUG_KEYWORDS
-    asyncio.run(run(keywords, args.out))
+    asyncio.run(run(args.keyword, args.out))
