@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     TEXT_AI_API_KEY: str = ""
     IMAGE_AI_URL: str = ""
     IMAGE_AI_API_KEY: str = ""
+    X_BEARER_TOKEN: str = ""
 
     model_config = {"env_file": ".env"}
 
