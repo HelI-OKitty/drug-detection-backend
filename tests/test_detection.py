@@ -18,11 +18,13 @@ def mock_admin():
 def make_doc(detection_id: str | None = None) -> dict:
     return {
         "_id": ObjectId(detection_id) if detection_id else ObjectId(),
-        "tweet_id": "1234567890",
-        "source_url": "https://x.com/user/status/1234567890",
+        "platform": "x",
+        "source_id": "1234567890",
+        "source_url": "https://x.com/testuser/status/1234567890",
         "content": "의심 게시글",
+        "created_at_source": datetime.now(timezone.utc),
         "keyword": "마약",
-        "author_name": "테스트유저",
+        "author_name": "testuser",
         "score": 0.85,
         "review_status": "unreviewed",
         "text_ai_result": None,
