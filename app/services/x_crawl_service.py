@@ -80,19 +80,20 @@ class ParsedPost:
 
 async def crawl_all_keywords(
     keywords: list[str] | None = None,
-    limit: int | None = CRAWL_LIMIT,
+    limit: int | None = None,
 ) -> dict[str, list[ParsedPost]]:
     """키워드 목록을 순차적으로 크롤링하여 키워드별 결과를 반환
 
     keywords 미전달 시 DRUG_KEYWORDS 전체 사용.
-    limit: 키워드당 최대 수집 건수 (None이면 전체 수집)
+    limit: 키워드당 최대 수집 건수 (None이면 CRAWL_LIMIT 상수 적용)
     추후 키워드별 개별 주기 스케줄링 시 keywords 인자로 제어 가능.
     """
+    effective_limit = limit if limit is not None else CRAWL_LIMIT
     targets = keywords if keywords is not None else DRUG_KEYWORDS
     results: dict[str, list[ParsedPost]] = {}
 
     for keyword in targets:
-        results[keyword] = await crawl_keyword(keyword, limit=limit)
+        results[keyword] = await crawl_keyword(keyword, limit=effective_limit)
 
     return results
 
