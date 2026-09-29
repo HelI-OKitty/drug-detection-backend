@@ -28,9 +28,15 @@ def make_summary() -> dict:
 def make_detection(detection_id=None) -> dict:
     return {
         "id": str(detection_id or ObjectId()),
-        "source_url": "https://example.com/post/1",
+        "platform": "x",
+        "source_id": "1234567890",
+        "source_url": "https://x.com/testuser/status/1234567890",
+        "content": "의심 게시글",
+        "created_at_source": datetime.now(timezone.utc),
+        "keyword": "마약",
+        "author_name": "testuser",
         "score": 0.85,
-        "review_status": "pending",
+        "review_status": "unreviewed",
         "detected_at": datetime.now(timezone.utc),
     }
 
