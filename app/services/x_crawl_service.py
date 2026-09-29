@@ -19,6 +19,13 @@ PLATFORM = "x"
 CRAWL_DAYS = 3  # 테스트 기간, 이후 조정
 CRAWL_LIMIT: int | None = 1  # 키워드당 최대 수집 건수, None이면 전체 수집
 
+# 즉시 중단 대상 HTTP 상태 코드 (계속 호출해도 의미 없는 에러)
+_FATAL_STATUS_CODES = {
+    401,  # 인증 실패 (잘못된 토큰)
+    403,  # 권한 없음
+    429,  # 요청 한도 초과
+}
+
 TWEET_FIELDS = [
     "id",
     "text",
@@ -149,6 +156,10 @@ async def crawl_keyword(
             )
 
             if resp.status_code != 200:
+                if resp.status_code in _FATAL_STATUS_CODES:
+                    raise RuntimeError(
+                        f"X API 치명적 오류 {resp.status_code} — 전체 크롤링 중단"
+                    )
                 break
 
             data = resp.json()
