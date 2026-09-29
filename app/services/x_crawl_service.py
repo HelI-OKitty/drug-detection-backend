@@ -17,6 +17,7 @@ from app.core.keywords import DRUG_KEYWORDS
 X_SEARCH_URL = "https://api.x.com/2/tweets/search/recent"
 PLATFORM = "x"
 CRAWL_DAYS = 3  # 테스트 기간, 이후 조정
+CRAWL_LIMIT: int | None = 1  # 키워드당 최대 수집 건수, None이면 전체 수집
 
 TWEET_FIELDS = [
     "id",
@@ -79,7 +80,7 @@ class ParsedPost:
 
 async def crawl_all_keywords(
     keywords: list[str] | None = None,
-    limit: int | None = None,
+    limit: int | None = CRAWL_LIMIT,
 ) -> dict[str, list[ParsedPost]]:
     """키워드 목록을 순차적으로 크롤링하여 키워드별 결과를 반환
 
