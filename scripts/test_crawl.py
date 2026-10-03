@@ -2,10 +2,10 @@
 X 크롤링 단독 테스트 스크립트
 
 사용법:
-    python scripts/test_crawl.py                               # DRUG_KEYWORDS 전체
+    python scripts/test_crawl.py                               # DRUG_KEYWORDS 전체 → crawling_data/crawling_result{N}.json 자동 저장
     python scripts/test_crawl.py --keyword 작대기              # 단일 키워드
     python scripts/test_crawl.py --keyword 작대기 --limit 10   # 최대 10건
-    python scripts/test_crawl.py --keyword 작대기 --out result.json
+    python scripts/test_crawl.py --keyword 작대기 --out result.json  # 경로 직접 지정
 """
 
 import argparse
@@ -61,12 +61,18 @@ async def run(
 
     if out_path:
         path = Path(out_path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
-        print(f"저장 완료: {path}")
     else:
-        print(json.dumps(results, indent=2, ensure_ascii=False))
+        crawling_dir = Path(__file__).resolve().parent.parent / "crawling_data"
+        crawling_dir.mkdir(exist_ok=True)
+        n = 1
+        while (crawling_dir / f"crawling_result{n}.json").exists():
+            n += 1
+        path = crawling_dir / f"crawling_result{n}.json"
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2, ensure_ascii=False)
+    print(f"저장 완료: {path}")
 
 
 def parse_args() -> argparse.Namespace:
@@ -77,7 +83,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--out",
-        help="결과 저장 경로 (미입력 시 stdout 출력)",
+        help="결과 저장 경로 (미입력 시 crawling_data/crawling_result{N}.json 자동 저장)",
     )
     parser.add_argument(
         "--limit",
