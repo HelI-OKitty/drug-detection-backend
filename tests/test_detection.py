@@ -24,7 +24,7 @@ def make_doc(detection_id: str | None = None) -> dict:
         "content": "의심 게시글",
         "created_at_source": datetime.now(timezone.utc),
         "keyword": "마약",
-        "author_name": "testuser",
+        "author_id": "testuser",
         "score": 0.85,
         "review_status": "unreviewed",
         "text_ai_result": None,
