@@ -4,7 +4,7 @@
 X API 크롤링 → AI 분석 → MongoDB 저장까지의 전체 흐름을 담당한다.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from app.core.keywords import DRUG_KEYWORDS
 from app.db.mongo import db
@@ -76,7 +76,7 @@ async def run_crawl_pipeline(
             ),
             "image_ai_results": [r.model_dump() for r in result.image_ai_results],
             "admin_id": admin_id,
-            "detected_at": datetime.now(timezone.utc),
+            "detected_at": datetime.now(timezone(timedelta(hours=9))),
         }
         await db.detections.insert_one(doc)
         saved += 1
