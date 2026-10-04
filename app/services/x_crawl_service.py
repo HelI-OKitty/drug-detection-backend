@@ -97,15 +97,17 @@ class ParsedPost:
 async def crawl_all_keywords(
     keywords: list[str] | None = None,
     max_results: int = DEFAULT_MAX_RESULTS,
+    since_id: str | None = None,
 ) -> list[ParsedPost]:
     """키워드 리스트를 OR 쿼리로 묶어 X API 1회 호출, ParsedPost 리스트 반환
 
     keywords 미전달 시 DRUG_KEYWORDS 전체 사용.
     max_results: 최대 수집 건수 (기본 100, X API 상한 100)
+    since_id: 이 tweet ID보다 큰(최신) 게시글만 수집 — 중복 크롤링 방지
     """
     targets = keywords if keywords is not None else DRUG_KEYWORDS
     query = _build_query(targets)
-    posts = await _crawl_query(query, max_results=max_results)
+    posts = await _crawl_query(query, max_results=max_results, since_id=since_id)
 
     for post in posts:
         post.matched_keywords = _tag_keywords(post.content, targets)
@@ -169,6 +171,7 @@ def _build_params(
     query: str,
     page_size: int = 100,
     next_token: str | None = None,
+    since_id: str | None = None,
 ) -> dict:
     start_time = (
         datetime.now(timezone.utc) - timedelta(hours=CRAWL_WINDOW_HOURS)
@@ -184,12 +187,15 @@ def _build_params(
     }
     if next_token:
         params["next_token"] = next_token
+    if since_id:
+        params["since_id"] = since_id
     return params
 
 
 async def _crawl_query(
     query: str,
     max_results: int = DEFAULT_MAX_RESULTS,
+    since_id: str | None = None,
 ) -> list[ParsedPost]:
     """OR 쿼리로 트윗을 수집하여 ParsedPost 리스트 반환 (페이지네이션 지원)"""
     posts: list[ParsedPost] = []
@@ -200,7 +206,9 @@ async def _crawl_query(
         next_token: str | None = None
 
         while True:
-            params = _build_params(query, page_size=page_size, next_token=next_token)
+            params = _build_params(
+                query, page_size=page_size, next_token=next_token, since_id=since_id
+            )
 
             resp = await client.get(
                 X_SEARCH_URL,
