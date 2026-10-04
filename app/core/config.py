@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     IMAGE_AI_URL: str = ""
     IMAGE_AI_API_KEY: str = ""
     X_BEARER_TOKEN: str = ""
+    INTERNAL_API_KEY: str = ""
 
     model_config = {"env_file": ".env"}
 
