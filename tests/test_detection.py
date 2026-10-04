@@ -23,7 +23,7 @@ def make_doc(detection_id: str | None = None) -> dict:
         "source_url": "https://x.com/testuser/status/1234567890",
         "content": "의심 게시글",
         "created_at_source": datetime.now(timezone.utc),
-        "keyword": "마약",
+        "keyword": ["마약"],
         "author_id": "testuser",
         "score": 0.85,
         "review_status": "unreviewed",
