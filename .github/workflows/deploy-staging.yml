@@ -35,4 +35,4 @@ jobs:
             --region asia-northeast3 \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars "^|^MONGO_URI=${{ secrets.MONGO_URI }}|JWT_SECRET=${{ secrets.JWT_SECRET }}|DB_NAME=drug_db|TEXT_AI_URL=${{ secrets.TEXT_AI_URL }}|TEXT_AI_API_KEY=${{ secrets.TEXT_AI_API_KEY }}|IMAGE_AI_URL=${{ secrets.IMAGE_AI_URL }}|IMAGE_AI_API_KEY=${{ secrets.IMAGE_AI_API_KEY }}|X_BEARER_TOKEN=${{ secrets.X_BEARER_TOKEN }}|INTERNAL_API_KEY=${{ secrets.INTERNAL_API_KEY }}|CORS_ORIGINS=[\"*\"]"
+            --set-env-vars "^|^MONGO_URI=${{ secrets.MONGO_URI }}|JWT_SECRET=${{ secrets.JWT_SECRET }}|DB_NAME=drug_db|TEXT_AI_URL=${{ secrets.TEXT_AI_URL }}|TEXT_AI_API_KEY=${{ secrets.TEXT_AI_API_KEY }}|IMAGE_AI_URL=${{ secrets.IMAGE_AI_URL }}|IMAGE_AI_API_KEY=${{ secrets.IMAGE_AI_API_KEY }}|X_BEARER_TOKEN=${{ secrets.X_BEARER_TOKEN }}|INTERNAL_API_KEY=${{ secrets.INTERNAL_API_KEY }}|CORS_ORIGINS=[\"https://hello-capstone.shop\"]"
