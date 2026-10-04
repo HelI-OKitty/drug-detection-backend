@@ -17,7 +17,8 @@ BASE_URL = "http://test"
 async def test_analyze_text_non_drug():
     """텍스트 전송 → 비마약 판별"""
     with patch(
-        "app.services.detection_service.call_text_ai", AsyncMock(return_value=TEXT_AI_NON_DRUG)
+        "app.services.detection_service.call_text_ai",
+        AsyncMock(return_value=TEXT_AI_NON_DRUG),
     ):
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url=BASE_URL
@@ -38,7 +39,10 @@ async def test_analyze_text_non_drug():
 
 async def test_analyze_text_drug():
     """텍스트 전송 → 마약 판별"""
-    with patch("app.services.detection_service.call_text_ai", AsyncMock(return_value=TEXT_AI_DRUG)):
+    with patch(
+        "app.services.detection_service.call_text_ai",
+        AsyncMock(return_value=TEXT_AI_DRUG),
+    ):
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url=BASE_URL
         ) as client:
@@ -62,7 +66,8 @@ async def test_analyze_image_only_non_drug():
             AsyncMock(return_value=IMAGE_AI_NON_DRUG),
         ) as mock_image,
         patch(
-            "app.services.detection_service.call_text_ai", AsyncMock(return_value=TEXT_AI_NON_DRUG)
+            "app.services.detection_service.call_text_ai",
+            AsyncMock(return_value=TEXT_AI_NON_DRUG),
         ) as mock_text,
     ):
         async with AsyncClient(
@@ -85,7 +90,8 @@ async def test_analyze_image_only_non_drug():
 async def test_analyze_image_only_drug():
     """이미지만 전송, OCR 없음 → 이미지 AI 마약 탐지"""
     with patch(
-        "app.services.detection_service.call_image_ai", AsyncMock(return_value=IMAGE_AI_DRUG)
+        "app.services.detection_service.call_image_ai",
+        AsyncMock(return_value=IMAGE_AI_DRUG),
     ):
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url=BASE_URL
@@ -110,7 +116,10 @@ async def test_analyze_image_with_ocr_drug():
             "app.services.detection_service.call_image_ai",
             AsyncMock(return_value=IMAGE_AI_NON_DRUG_WITH_OCR),
         ),
-        patch("app.services.detection_service.call_text_ai", AsyncMock(return_value=TEXT_AI_DRUG)),
+        patch(
+            "app.services.detection_service.call_text_ai",
+            AsyncMock(return_value=TEXT_AI_DRUG),
+        ),
     ):
         async with AsyncClient(
             transport=ASGITransport(app=app), base_url=BASE_URL
@@ -134,7 +143,8 @@ async def test_analyze_image_and_text_drug():
             AsyncMock(return_value=IMAGE_AI_NON_DRUG_WITH_OCR),
         ),
         patch(
-            "app.services.detection_service.call_text_ai", AsyncMock(return_value=TEXT_AI_DRUG)
+            "app.services.detection_service.call_text_ai",
+            AsyncMock(return_value=TEXT_AI_DRUG),
         ) as mock_text,
     ):
         async with AsyncClient(

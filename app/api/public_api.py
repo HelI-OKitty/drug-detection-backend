@@ -23,7 +23,7 @@ async def public_analyze(body: PublicAnalyzeRequest):
             if first_img and first_img.prediction == 1
             else None
         ),
-        ocr_text=first_img.ocr_text if first_img else None,
+        ocr_text=(first_img.ocr_text or None) if first_img else None,
         prob_drug=result.text_ai_result.prob_drug if result.text_ai_result else None,
         prob_non_drug=(
             result.text_ai_result.prob_non_drug if result.text_ai_result else None
