@@ -12,7 +12,7 @@ async def get_summary(admin_id: str) -> dict:
         {"admin_id": admin_id, "detected_at": {"$gte": today_start}}
     )
     unconfirmed = await db.detections.count_documents(
-        {"admin_id": admin_id, "review_status": "pending"}
+        {"admin_id": admin_id, "review_status": "unreviewed"}
     )
 
     trend = []
@@ -34,7 +34,13 @@ async def get_recent(admin_id: str, limit: int = 10) -> list[dict]:
     return [
         {
             "id": str(doc["_id"]),
+            "platform": doc["platform"],
+            "source_id": doc["source_id"],
             "source_url": doc["source_url"],
+            "content": doc["content"],
+            "created_at_source": doc["created_at_source"],
+            "keyword": doc["keyword"],
+            "author_id": doc["author_id"],
             "score": doc["score"],
             "review_status": doc["review_status"],
             "detected_at": doc["detected_at"],

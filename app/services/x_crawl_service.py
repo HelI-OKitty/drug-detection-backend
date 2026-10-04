@@ -20,7 +20,6 @@ KST = timezone(timedelta(hours=9))
 X_SEARCH_URL = "https://api.x.com/2/tweets/search/recent"
 X_TWEET_URL = "https://api.x.com/2/tweets"
 PLATFORM = "x"
-CRAWL_WINDOW_HOURS = 1  # 크롤링 기준 시간 범위 (1시간 주기 스케줄링 기준)
 DEFAULT_MAX_RESULTS = 100  # 기본 최대 수집 건수
 
 # X API search/recent max_results 파라미터 허용 범위 (X API 스펙 고정값)
@@ -173,13 +172,9 @@ def _build_params(
     next_token: str | None = None,
     since_id: str | None = None,
 ) -> dict:
-    start_time = (
-        datetime.now(timezone.utc) - timedelta(hours=CRAWL_WINDOW_HOURS)
-    ).strftime("%Y-%m-%dT%H:%M:%SZ")
     params: dict = {
         "query": query,
         "max_results": page_size,
-        "start_time": start_time,
         "tweet.fields": ",".join(TWEET_FIELDS),
         "expansions": ",".join(EXPANSIONS),
         "user.fields": ",".join(USER_FIELDS),
