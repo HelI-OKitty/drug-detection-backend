@@ -194,9 +194,7 @@ async def _crawl_query(
     """OR 쿼리로 트윗을 수집하여 ParsedPost 리스트 반환 (페이지네이션 지원)"""
     posts: list[ParsedPost] = []
 
-    page_size = max(
-        min(max_results, _X_MAX_RESULTS_PER_PAGE), _X_MIN_RESULTS_PER_PAGE
-    )
+    page_size = max(min(max_results, _X_MAX_RESULTS_PER_PAGE), _X_MIN_RESULTS_PER_PAGE)
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         next_token: str | None = None
