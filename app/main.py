@@ -8,6 +8,7 @@ from app.api.auth_api import router as auth_router
 from app.api.dashboard_api import router as dashboard_router
 from app.api.detection_api import router as detection_router
 from app.api.health_api import router as health_router
+from app.api.internal_api import router as internal_router
 from app.api.profile_api import router as profile_router
 from app.api.public_api import router as public_router
 from app.core.config import settings
@@ -36,6 +37,7 @@ app.include_router(profile_router)
 app.include_router(detection_router)
 app.include_router(dashboard_router)
 app.include_router(public_router)
+app.include_router(internal_router)
 
 
 @app.exception_handler(HTTPException)
