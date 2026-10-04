@@ -23,6 +23,10 @@ PLATFORM = "x"
 CRAWL_WINDOW_HOURS = 1  # 크롤링 기준 시간 범위 (1시간 주기 스케줄링 기준)
 DEFAULT_MAX_RESULTS = 100  # 기본 최대 수집 건수
 
+# X API search/recent max_results 파라미터 허용 범위 (X API 스펙 고정값)
+_X_MAX_RESULTS_PER_PAGE = 100
+_X_MIN_RESULTS_PER_PAGE = 10
+
 # 즉시 중단 대상 HTTP 상태 코드 (계속 호출해도 의미 없는 에러)
 _FATAL_STATUS_CODES = {
     401,  # 인증 실패 (잘못된 토큰)
@@ -190,8 +194,9 @@ async def _crawl_query(
     """OR 쿼리로 트윗을 수집하여 ParsedPost 리스트 반환 (페이지네이션 지원)"""
     posts: list[ParsedPost] = []
 
-    # X API: max_results 범위 10~100
-    page_size = max(min(max_results, 100), 10)
+    page_size = max(
+        min(max_results, _X_MAX_RESULTS_PER_PAGE), _X_MIN_RESULTS_PER_PAGE
+    )
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         next_token: str | None = None
