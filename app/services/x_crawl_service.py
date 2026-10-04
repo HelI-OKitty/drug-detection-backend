@@ -2,7 +2,8 @@
 X(트위터) API v2 크롤링 서비스
 
 흐름:
-  키워드 검색 → 트윗 파싱 → 이미지 다운로드(base64) → ParsedPost 반환
+  OR 쿼리 생성 → X API 1회 호출 → 트윗 파싱 → 매칭 키워드 태깅
+  → 이미지 다운로드(base64) → ParsedPost 반환
 """
 
 import base64
@@ -19,8 +20,8 @@ KST = timezone(timedelta(hours=9))
 X_SEARCH_URL = "https://api.x.com/2/tweets/search/recent"
 X_TWEET_URL = "https://api.x.com/2/tweets"
 PLATFORM = "x"
-CRAWL_DAYS = 3  # 테스트 기간, 이후 조정
-CRAWL_LIMIT: int | None = 1  # 키워드당 최대 수집 건수, None이면 전체 수집
+CRAWL_WINDOW_HOURS = 1  # 크롤링 기준 시간 범위 (1시간 주기 스케줄링 기준)
+DEFAULT_MAX_RESULTS = 100  # 기본 최대 수집 건수
 
 # 즉시 중단 대상 HTTP 상태 코드 (계속 호출해도 의미 없는 에러)
 _FATAL_STATUS_CODES = {
@@ -86,26 +87,26 @@ class ParsedPost:
     author_id: str
     image_urls: list[str] = field(default_factory=list)
     image_b64s: list[str] = field(default_factory=list)
+    matched_keywords: list[str] = field(default_factory=list)
 
 
 async def crawl_all_keywords(
     keywords: list[str] | None = None,
-    limit: int | None = None,
-) -> dict[str, list[ParsedPost]]:
-    """키워드 목록을 순차적으로 크롤링하여 키워드별 결과를 반환
+    max_results: int = DEFAULT_MAX_RESULTS,
+) -> list[ParsedPost]:
+    """키워드 리스트를 OR 쿼리로 묶어 X API 1회 호출, ParsedPost 리스트 반환
 
     keywords 미전달 시 DRUG_KEYWORDS 전체 사용.
-    limit: 키워드당 최대 수집 건수 (None이면 CRAWL_LIMIT 상수 적용)
-    추후 키워드별 개별 주기 스케줄링 시 keywords 인자로 제어 가능.
+    max_results: 최대 수집 건수 (기본 100, X API 상한 100)
     """
-    effective_limit = limit if limit is not None else CRAWL_LIMIT
     targets = keywords if keywords is not None else DRUG_KEYWORDS
-    results: dict[str, list[ParsedPost]] = {}
+    query = _build_query(targets)
+    posts = await _crawl_query(query, max_results=max_results)
 
-    for keyword in targets:
-        results[keyword] = await crawl_keyword(keyword, limit=effective_limit)
+    for post in posts:
+        post.matched_keywords = _tag_keywords(post.content, targets)
 
-    return results
+    return posts
 
 
 async def fetch_tweet_by_url(url: str) -> ParsedPost:
@@ -137,8 +138,17 @@ async def fetch_tweet_by_url(url: str) -> ParsedPost:
         return post
 
 
-def _build_query(keyword: str, lang: str = "ko", exclude_retweets: bool = True) -> str:
-    query = keyword
+def _build_query(
+    keywords: list[str],
+    lang: str = "ko",
+    exclude_retweets: bool = True,
+) -> str:
+    """키워드 리스트를 OR 조건으로 묶어 X API 쿼리 문자열 생성
+
+    예: ["브액", "필로폰"] → "(브액 OR 필로폰) lang:ko -is:retweet"
+    """
+    joined = " OR ".join(keywords)
+    query = f"({joined})"
     if lang:
         query += f" lang:{lang}"
     if exclude_retweets:
@@ -146,13 +156,22 @@ def _build_query(keyword: str, lang: str = "ko", exclude_retweets: bool = True) 
     return query
 
 
-def _build_params(query: str, next_token: str | None = None) -> dict:
-    start_time = (datetime.now(timezone.utc) - timedelta(days=CRAWL_DAYS)).strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
+def _tag_keywords(content: str, keywords: list[str]) -> list[str]:
+    """게시글 본문에서 매칭된 키워드 목록 반환"""
+    return [kw for kw in keywords if kw in content]
+
+
+def _build_params(
+    query: str,
+    page_size: int = 100,
+    next_token: str | None = None,
+) -> dict:
+    start_time = (
+        datetime.now(timezone.utc) - timedelta(hours=CRAWL_WINDOW_HOURS)
+    ).strftime("%Y-%m-%dT%H:%M:%SZ")
     params: dict = {
         "query": query,
-        "max_results": 10,
+        "max_results": page_size,
         "start_time": start_time,
         "tweet.fields": ",".join(TWEET_FIELDS),
         "expansions": ",".join(EXPANSIONS),
@@ -164,22 +183,21 @@ def _build_params(query: str, next_token: str | None = None) -> dict:
     return params
 
 
-async def crawl_keyword(
-    keyword: str,
-    limit: int | None = None,
+async def _crawl_query(
+    query: str,
+    max_results: int = DEFAULT_MAX_RESULTS,
 ) -> list[ParsedPost]:
-    """키워드로 최근 CRAWL_DAYS일치 트윗을 수집하여 ParsedPost 리스트로 반환
-
-    limit: 최대 수집 건수 (None이면 전체 수집)
-    """
-    query = _build_query(keyword)
+    """OR 쿼리로 트윗을 수집하여 ParsedPost 리스트 반환 (페이지네이션 지원)"""
     posts: list[ParsedPost] = []
+
+    # X API: max_results 범위 10~100
+    page_size = max(min(max_results, 100), 10)
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         next_token: str | None = None
 
         while True:
-            params = _build_params(query, next_token=next_token)
+            params = _build_params(query, page_size=page_size, next_token=next_token)
 
             resp = await client.get(
                 X_SEARCH_URL,
@@ -190,7 +208,7 @@ async def crawl_keyword(
             if resp.status_code != 200:
                 if resp.status_code in _FATAL_STATUS_CODES:
                     raise RuntimeError(
-                        f"X API 치명적 오류 {resp.status_code} — 전체 크롤링 중단"
+                        f"X API 치명적 오류 {resp.status_code} — 크롤링 중단"
                     )
                 break
 
@@ -207,10 +225,10 @@ async def crawl_keyword(
                 post = _parse_tweet(tweet, users, media_map)
                 post.image_b64s = await _download_images(post.image_urls)
                 posts.append(post)
-                if limit and len(posts) >= limit:
+                if len(posts) >= max_results:
                     break
 
-            if limit and len(posts) >= limit:
+            if len(posts) >= max_results:
                 break
 
             next_token = data.get("meta", {}).get("next_token")

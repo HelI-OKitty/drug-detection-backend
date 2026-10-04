@@ -25,7 +25,7 @@ class DetectionOut(BaseModel):
     created_at_source: datetime = Field(
         ..., description="게시글 작성 일시 (플랫폼 기준)"
     )
-    keyword: str = Field(..., description="탐지에 사용된 키워드")
+    keyword: list[str] = Field(..., description="매칭된 키워드 목록")
     author_id: str = Field(..., description="작성자 username")
     score: float = Field(..., ge=0.0, le=1.0, description="종합 AI 탐지 점수")
     review_status: ReviewStatus = Field(..., description="검토 상태")
@@ -48,7 +48,7 @@ class DetectionListItem(BaseModel):
     created_at_source: datetime = Field(
         ..., description="게시글 작성 일시 (플랫폼 기준)"
     )
-    keyword: str = Field(..., description="탐지에 사용된 키워드")
+    keyword: list[str] = Field(..., description="매칭된 키워드 목록")
     author_id: str = Field(..., description="작성자 username")
     score: float = Field(..., description="종합 AI 탐지 점수")
     review_status: ReviewStatus = Field(..., description="검토 상태")
