@@ -19,6 +19,7 @@ def _to_out(doc: dict) -> DetectionOut:
         created_at_source=doc["created_at_source"],
         keyword=doc["keyword"],
         author_id=doc["author_id"],
+        is_drug=doc.get("is_drug", True),
         score=doc["score"],
         review_status=doc["review_status"],
         text_ai_result=doc.get("text_ai_result"),
@@ -30,7 +31,9 @@ def _to_out(doc: dict) -> DetectionOut:
 
 @router.get("", response_model=list[DetectionListItem])
 async def list_detections(admin_id: str = Depends(get_current_admin)):
-    cursor = db.detections.find({"admin_id": admin_id}).sort("detected_at", -1)
+    cursor = db.detections.find({"admin_id": admin_id, "is_drug": True}).sort(
+        "detected_at", -1
+    )
     return [
         DetectionListItem(
             id=str(doc["_id"]),
@@ -41,6 +44,7 @@ async def list_detections(admin_id: str = Depends(get_current_admin)):
             created_at_source=doc["created_at_source"],
             keyword=doc["keyword"],
             author_id=doc["author_id"],
+            is_drug=doc.get("is_drug", True),
             score=doc["score"],
             review_status=doc["review_status"],
             detected_at=doc["detected_at"],

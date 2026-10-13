@@ -7,12 +7,13 @@ async def get_summary(admin_id: str) -> dict:
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    total = await db.detections.count_documents({"admin_id": admin_id})
+    base = {"admin_id": admin_id, "is_drug": True}
+    total = await db.detections.count_documents(base)
     today = await db.detections.count_documents(
-        {"admin_id": admin_id, "detected_at": {"$gte": today_start}}
+        {**base, "detected_at": {"$gte": today_start}}
     )
     unconfirmed = await db.detections.count_documents(
-        {"admin_id": admin_id, "review_status": "unreviewed"}
+        {**base, "review_status": "unreviewed"}
     )
 
     trend = []
@@ -20,7 +21,7 @@ async def get_summary(admin_id: str) -> dict:
         day_start = (today_start - timedelta(days=i)).replace(tzinfo=timezone.utc)
         day_end = day_start + timedelta(days=1)
         count = await db.detections.count_documents(
-            {"admin_id": admin_id, "detected_at": {"$gte": day_start, "$lt": day_end}}
+            {**base, "detected_at": {"$gte": day_start, "$lt": day_end}}
         )
         trend.append({"date": day_start.strftime("%Y-%m-%d"), "count": count})
 
@@ -29,7 +30,9 @@ async def get_summary(admin_id: str) -> dict:
 
 async def get_recent(admin_id: str, limit: int = 10) -> list[dict]:
     cursor = (
-        db.detections.find({"admin_id": admin_id}).sort("detected_at", -1).limit(limit)
+        db.detections.find({"admin_id": admin_id, "is_drug": True})
+        .sort("detected_at", -1)
+        .limit(limit)
     )
     return [
         {
@@ -41,6 +44,7 @@ async def get_recent(admin_id: str, limit: int = 10) -> list[dict]:
             "created_at_source": doc["created_at_source"],
             "keyword": doc["keyword"],
             "author_id": doc["author_id"],
+            "is_drug": doc.get("is_drug", True),
             "score": doc["score"],
             "review_status": doc["review_status"],
             "detected_at": doc["detected_at"],

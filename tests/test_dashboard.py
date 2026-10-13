@@ -35,6 +35,7 @@ def make_detection(detection_id=None) -> dict:
         "created_at_source": datetime.now(timezone.utc),
         "keyword": ["마약"],
         "author_id": "testuser",
+        "is_drug": True,
         "score": 0.85,
         "review_status": "unreviewed",
         "detected_at": datetime.now(timezone.utc),
