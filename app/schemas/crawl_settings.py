@@ -8,7 +8,7 @@ class CrawlSettingsOut(BaseModel):
     keywords: list[str] = Field(..., description="크롤링 키워드 목록")
     max_results: int = Field(..., description="1회 최대 수집 건수")
     crawl_enabled: bool = Field(..., description="자동 크롤링 활성화 여부")
-    schedule_interval: int = Field(..., description="크롤링 주기 (분 단위: 10/60/120/180)")
+    schedule_interval: int = Field(..., description="크롤링 주기 (분: 10/60/120/180)")
 
 
 class CrawlSettingsUpdate(BaseModel):
