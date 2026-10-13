@@ -9,7 +9,7 @@ from app.schemas.crawl_settings import (
 )
 from app.services import gcp_scheduler_service
 
-DEFAULT_SCHEDULE_HOURS = 1
+DEFAULT_SCHEDULE_INTERVAL = 60  # 분 단위 기본값: 1시간
 
 
 async def _get_or_create(admin_id: str) -> dict:
@@ -21,7 +21,7 @@ async def _get_or_create(admin_id: str) -> dict:
         "keywords": DEFAULT_KEYWORDS,
         "max_results": 100,
         "crawl_enabled": False,
-        "schedule_hours": DEFAULT_SCHEDULE_HOURS,
+        "schedule_interval": DEFAULT_SCHEDULE_INTERVAL,
     }
     try:
         await db.crawl_settings.insert_one(default)
@@ -36,7 +36,7 @@ def _to_out(doc: dict) -> CrawlSettingsOut:
         keywords=doc["keywords"],
         max_results=doc["max_results"],
         crawl_enabled=doc["crawl_enabled"],
-        schedule_hours=doc.get("schedule_hours", DEFAULT_SCHEDULE_HOURS),
+        schedule_interval=doc.get("schedule_interval", DEFAULT_SCHEDULE_INTERVAL),
     )
 
 
@@ -55,16 +55,16 @@ async def update_settings(admin_id: str, data: CrawlSettingsUpdate) -> CrawlSett
     if data.max_results is not None:
         update["max_results"] = data.max_results
 
-    if data.schedule_hours is not None:
-        update["schedule_hours"] = data.schedule_hours
+    if data.schedule_interval is not None:
+        update["schedule_interval"] = data.schedule_interval
 
     if update:
         await db.crawl_settings.update_one({"admin_id": admin_id}, {"$set": update})
         doc.update(update)
 
-        # 자동 크롤링 활성화 상태에서 schedule_hours 변경 시 job 업데이트
-        if data.schedule_hours is not None and doc.get("crawl_enabled"):
-            gcp_scheduler_service.update_job(admin_id, data.schedule_hours)
+        # 자동 크롤링 활성화 상태에서 schedule_interval 변경 시 job 업데이트
+        if data.schedule_interval is not None and doc.get("crawl_enabled"):
+            gcp_scheduler_service.update_job(admin_id, data.schedule_interval)
 
     return _to_out(doc)
 
@@ -81,8 +81,8 @@ async def toggle_crawl_enabled(
     if data.crawl_enabled:
         # false → true: since_id 리셋 + GCP job 생성
         await db.crawl_state.delete_one({"admin_id": admin_id})
-        schedule_hours = doc.get("schedule_hours", DEFAULT_SCHEDULE_HOURS)
-        gcp_scheduler_service.create_job(admin_id, schedule_hours)
+        schedule_interval = doc.get("schedule_interval", DEFAULT_SCHEDULE_INTERVAL)
+        gcp_scheduler_service.create_job(admin_id, schedule_interval)
     else:
         # true → false: GCP job 삭제
         gcp_scheduler_service.delete_job(admin_id)

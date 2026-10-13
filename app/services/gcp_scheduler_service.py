@@ -12,7 +12,7 @@ from google.cloud import scheduler_v1
 
 from app.core.config import settings
 
-VALID_SCHEDULE_HOURS = [1, 2, 3, 6, 12, 24]
+VALID_SCHEDULE_INTERVALS = [10, 60, 120, 180]  # 분 단위: 10분/1시간/2시간/3시간
 
 
 def _client() -> scheduler_v1.CloudSchedulerClient:
@@ -27,19 +27,23 @@ def _job_name(admin_id: str) -> str:
     return f"{_parent()}/jobs/drug-crawl-admin-{admin_id}"
 
 
-def _cron(schedule_hours: int) -> str:
-    if schedule_hours == 1:
+def _cron(schedule_interval: int) -> str:
+    """분 단위 주기를 cron 표현식으로 변환."""
+    if schedule_interval < 60:
+        return f"*/{schedule_interval} * * * *"
+    hours = schedule_interval // 60
+    if hours == 1:
         return "0 * * * *"
-    return f"0 */{schedule_hours} * * *"
+    return f"0 */{hours} * * *"
 
 
-def _build_job(admin_id: str, schedule_hours: int) -> scheduler_v1.Job:
+def _build_job(admin_id: str, schedule_interval: int) -> scheduler_v1.Job:
     trigger_url = f"{settings.CLOUD_RUN_URL}/crawl/trigger"
     body = json.dumps({"admin_id": admin_id}).encode("utf-8")
 
     return scheduler_v1.Job(
         name=_job_name(admin_id),
-        schedule=_cron(schedule_hours),
+        schedule=_cron(schedule_interval),
         time_zone="Asia/Seoul",
         http_target=scheduler_v1.HttpTarget(
             uri=trigger_url,
@@ -53,20 +57,20 @@ def _build_job(admin_id: str, schedule_hours: int) -> scheduler_v1.Job:
     )
 
 
-def create_job(admin_id: str, schedule_hours: int) -> None:
+def create_job(admin_id: str, schedule_interval: int) -> None:
     """관리자 크롤링 job 생성. 이미 존재하면 업데이트."""
     client = _client()
-    job = _build_job(admin_id, schedule_hours)
+    job = _build_job(admin_id, schedule_interval)
     try:
         client.create_job(parent=_parent(), job=job)
     except AlreadyExists:
-        update_job(admin_id, schedule_hours)
+        update_job(admin_id, schedule_interval)
 
 
-def update_job(admin_id: str, schedule_hours: int) -> None:
+def update_job(admin_id: str, schedule_interval: int) -> None:
     """관리자 크롤링 job 스케줄 수정."""
     client = _client()
-    job = _build_job(admin_id, schedule_hours)
+    job = _build_job(admin_id, schedule_interval)
     client.update_job(
         job=job,
         update_mask={"paths": ["schedule", "http_target"]},
