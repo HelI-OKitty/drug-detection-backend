@@ -62,9 +62,8 @@ async def update_settings(admin_id: str, data: CrawlSettingsUpdate) -> CrawlSett
         await db.crawl_settings.update_one({"admin_id": admin_id}, {"$set": update})
         doc.update(update)
 
-        # 자동 크롤링 활성화 상태에서 schedule_interval 변경 시 job 업데이트
         if data.schedule_interval is not None and doc.get("crawl_enabled"):
-            gcp_scheduler_service.update_job(admin_id, data.schedule_interval)
+            await gcp_scheduler_service.update_job(admin_id, data.schedule_interval)
 
     return _to_out(doc)
 
@@ -79,13 +78,11 @@ async def toggle_crawl_enabled(
         return _to_out(doc)
 
     if data.crawl_enabled:
-        # false → true: since_id 리셋 + GCP job 생성
         await db.crawl_state.delete_one({"admin_id": admin_id})
         schedule_interval = doc.get("schedule_interval", DEFAULT_SCHEDULE_INTERVAL)
-        gcp_scheduler_service.create_job(admin_id, schedule_interval)
+        await gcp_scheduler_service.create_job(admin_id, schedule_interval)
     else:
-        # true → false: GCP job 삭제
-        gcp_scheduler_service.delete_job(admin_id)
+        await gcp_scheduler_service.delete_job(admin_id)
 
     await db.crawl_settings.update_one(
         {"admin_id": admin_id}, {"$set": {"crawl_enabled": data.crawl_enabled}}

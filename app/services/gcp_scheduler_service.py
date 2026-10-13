@@ -1,10 +1,4 @@
-"""
-GCP Cloud Scheduler 연동 서비스
-
-관리자별 크롤링 job을 자동으로 생성/수정/삭제한다.
-각 job은 POST /crawl/trigger 를 admin_id와 함께 호출한다.
-"""
-
+import asyncio
 import json
 
 from google.api_core.exceptions import AlreadyExists, NotFound
@@ -28,7 +22,6 @@ def _job_name(admin_id: str) -> str:
 
 
 def _cron(schedule_interval: int) -> str:
-    """분 단위 주기를 cron 표현식으로 변환."""
     if schedule_interval < 60:
         return f"*/{schedule_interval} * * * *"
     hours = schedule_interval // 60
@@ -38,6 +31,8 @@ def _cron(schedule_interval: int) -> str:
 
 
 def _build_job(admin_id: str, schedule_interval: int) -> scheduler_v1.Job:
+    if not settings.CLOUD_RUN_URL.startswith("https://"):
+        raise ValueError("CLOUD_RUN_URL은 HTTPS여야 합니다")
     trigger_url = f"{settings.CLOUD_RUN_URL}/crawl/trigger"
     body = json.dumps({"admin_id": admin_id}).encode("utf-8")
 
@@ -57,18 +52,16 @@ def _build_job(admin_id: str, schedule_interval: int) -> scheduler_v1.Job:
     )
 
 
-def create_job(admin_id: str, schedule_interval: int) -> None:
-    """관리자 크롤링 job 생성. 이미 존재하면 업데이트."""
+def _create_job_sync(admin_id: str, schedule_interval: int) -> None:
     client = _client()
     job = _build_job(admin_id, schedule_interval)
     try:
         client.create_job(parent=_parent(), job=job)
     except AlreadyExists:
-        update_job(admin_id, schedule_interval)
+        _update_job_sync(admin_id, schedule_interval)
 
 
-def update_job(admin_id: str, schedule_interval: int) -> None:
-    """관리자 크롤링 job 스케줄 수정."""
+def _update_job_sync(admin_id: str, schedule_interval: int) -> None:
     client = _client()
     job = _build_job(admin_id, schedule_interval)
     client.update_job(
@@ -77,10 +70,21 @@ def update_job(admin_id: str, schedule_interval: int) -> None:
     )
 
 
-def delete_job(admin_id: str) -> None:
-    """관리자 크롤링 job 삭제. 없으면 무시."""
+def _delete_job_sync(admin_id: str) -> None:
     client = _client()
     try:
         client.delete_job(name=_job_name(admin_id))
     except NotFound:
         pass
+
+
+async def create_job(admin_id: str, schedule_interval: int) -> None:
+    await asyncio.to_thread(_create_job_sync, admin_id, schedule_interval)
+
+
+async def update_job(admin_id: str, schedule_interval: int) -> None:
+    await asyncio.to_thread(_update_job_sync, admin_id, schedule_interval)
+
+
+async def delete_job(admin_id: str) -> None:
+    await asyncio.to_thread(_delete_job_sync, admin_id)

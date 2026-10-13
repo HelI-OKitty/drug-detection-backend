@@ -80,6 +80,7 @@ async def trigger_crawl(
 
     results: list[AdminCrawlResult] = []
     total_saved = 0
+    has_error = False
 
     for admin in admins:
         admin_id = admin["_id"] if body.admin_id else str(admin["_id"])
@@ -89,6 +90,7 @@ async def trigger_crawl(
             total_saved += result["saved"]
         except Exception:
             logger.exception("admin_id=%s 크롤링 파이프라인 오류", admin_id)
+            has_error = True
             results.append(
                 AdminCrawlResult(
                     admin_id=admin_id,
@@ -99,8 +101,17 @@ async def trigger_crawl(
                 )
             )
 
-    return TriggerResponse(
+    response = TriggerResponse(
         admins_processed=len(admins),
         total_saved=total_saved,
         results=results,
     )
+
+    # 특정 관리자 타겟 실행에서 실패한 경우 Scheduler가 재시도할 수 있도록 500 반환
+    if body.admin_id and has_error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=response.model_dump(),
+        )
+
+    return response
