@@ -51,20 +51,13 @@ async def run_crawl_pipeline(
     last_tweet_id = since_id
 
     for post in posts:
-        # 수집된 게시글 중 최신 tweet ID 추적
         if last_tweet_id is None or int(post.source_id) > int(last_tweet_id):
             last_tweet_id = post.source_id
 
-        # AI 분석
         images = (
             list(zip(post.image_urls, post.image_b64s)) if post.image_b64s else None
         )
         result = await analyze_content(post.content, images)
-
-        # 마약으로 탐지된 경우만 저장
-        if not result.is_drug:
-            skipped += 1
-            continue
 
         doc = {
             "platform": post.platform,
@@ -74,6 +67,7 @@ async def run_crawl_pipeline(
             "created_at_source": post.created_at_source,
             "keyword": post.matched_keywords,
             "author_id": post.author_id,
+            "is_drug": result.is_drug,
             "score": result.score,
             "review_status": "unreviewed",
             "text_ai_result": (
@@ -84,7 +78,10 @@ async def run_crawl_pipeline(
             "detected_at": datetime.now(timezone(timedelta(hours=9))),
         }
         await db.detections.insert_one(doc)
-        saved += 1
+        if result.is_drug:
+            saved += 1
+        else:
+            skipped += 1
 
     # 수집된 게시글이 있으면 last_tweet_id 갱신
     if last_tweet_id and last_tweet_id != since_id:
