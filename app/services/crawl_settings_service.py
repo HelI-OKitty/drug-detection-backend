@@ -2,7 +2,14 @@ from pymongo.errors import DuplicateKeyError
 
 from app.core.keywords import DEFAULT_KEYWORDS
 from app.db.mongo import db
-from app.schemas.crawl_settings import CrawlSettingsOut, CrawlSettingsUpdate
+from app.schemas.crawl_settings import (
+    CrawlEnabledToggle,
+    CrawlSettingsOut,
+    CrawlSettingsUpdate,
+)
+from app.services import gcp_scheduler_service
+
+DEFAULT_SCHEDULE_INTERVAL = 60  # 분 단위 기본값: 1시간
 
 
 async def _get_or_create(admin_id: str) -> dict:
@@ -14,23 +21,28 @@ async def _get_or_create(admin_id: str) -> dict:
         "keywords": DEFAULT_KEYWORDS,
         "max_results": 100,
         "crawl_enabled": False,
+        "schedule_interval": DEFAULT_SCHEDULE_INTERVAL,
     }
     try:
         await db.crawl_settings.insert_one(default)
     except DuplicateKeyError:
-        # 동시 요청으로 이미 생성된 경우 재조회
         doc = await db.crawl_settings.find_one({"admin_id": admin_id})
         return doc  # type: ignore[return-value]
     return default
 
 
-async def get_settings(admin_id: str) -> CrawlSettingsOut:
-    doc = await _get_or_create(admin_id)
+def _to_out(doc: dict) -> CrawlSettingsOut:
     return CrawlSettingsOut(
         keywords=doc["keywords"],
         max_results=doc["max_results"],
         crawl_enabled=doc["crawl_enabled"],
+        schedule_interval=doc.get("schedule_interval", DEFAULT_SCHEDULE_INTERVAL),
     )
+
+
+async def get_settings(admin_id: str) -> CrawlSettingsOut:
+    doc = await _get_or_create(admin_id)
+    return _to_out(doc)
 
 
 async def update_settings(admin_id: str, data: CrawlSettingsUpdate) -> CrawlSettingsOut:
@@ -43,15 +55,40 @@ async def update_settings(admin_id: str, data: CrawlSettingsUpdate) -> CrawlSett
     if data.max_results is not None:
         update["max_results"] = data.max_results
 
+    if data.schedule_interval is not None:
+        update["schedule_interval"] = data.schedule_interval
+
     if update:
         await db.crawl_settings.update_one({"admin_id": admin_id}, {"$set": update})
         doc.update(update)
 
-    return CrawlSettingsOut(
-        keywords=doc["keywords"],
-        max_results=doc["max_results"],
-        crawl_enabled=doc["crawl_enabled"],
+        if data.schedule_interval is not None and doc.get("crawl_enabled"):
+            await gcp_scheduler_service.update_job(admin_id, data.schedule_interval)
+
+    return _to_out(doc)
+
+
+async def toggle_crawl_enabled(
+    admin_id: str, data: CrawlEnabledToggle
+) -> CrawlSettingsOut:
+    doc = await _get_or_create(admin_id)
+    current_enabled = doc.get("crawl_enabled", False)
+
+    if data.crawl_enabled == current_enabled:
+        return _to_out(doc)
+
+    if data.crawl_enabled:
+        await db.crawl_state.delete_one({"admin_id": admin_id})
+        schedule_interval = doc.get("schedule_interval", DEFAULT_SCHEDULE_INTERVAL)
+        await gcp_scheduler_service.create_job(admin_id, schedule_interval)
+    else:
+        await gcp_scheduler_service.delete_job(admin_id)
+
+    await db.crawl_settings.update_one(
+        {"admin_id": admin_id}, {"$set": {"crawl_enabled": data.crawl_enabled}}
     )
+    doc["crawl_enabled"] = data.crawl_enabled
+    return _to_out(doc)
 
 
 async def get_keywords_for_pipeline(admin_id: str) -> list[str]:

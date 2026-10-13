@@ -32,6 +32,10 @@ def _verify_crawl_secret(secret: str | None = Security(_crawl_secret_header)) ->
 
 
 class TriggerRequest(BaseModel):
+    admin_id: str | None = Field(
+        None,
+        description="특정 관리자 ID. 미지정 시 전체 관리자 대상 실행.",
+    )
     max_results: int | None = Field(
         None,
         ge=10,
@@ -68,20 +72,25 @@ async def trigger_crawl(
     body: TriggerRequest,
     _: None = Security(_verify_crawl_secret),
 ) -> TriggerResponse:
-    """GCP Cloud Scheduler → 전체 관리자 크롤링 트리거"""
-    admins = await db.admins.find({}, {"_id": 1}).to_list(length=None)
+    """GCP Cloud Scheduler → 관리자별 크롤링 트리거"""
+    if body.admin_id:
+        admins = [{"_id": body.admin_id}]
+    else:
+        admins = await db.admins.find({}, {"_id": 1}).to_list(length=None)
 
     results: list[AdminCrawlResult] = []
     total_saved = 0
+    has_error = False
 
     for admin in admins:
-        admin_id = str(admin["_id"])
+        admin_id = admin["_id"] if body.admin_id else str(admin["_id"])
         try:
             result = await run_crawl_pipeline(admin_id, max_results=body.max_results)
             results.append(AdminCrawlResult(admin_id=admin_id, **result))
             total_saved += result["saved"]
         except Exception:
             logger.exception("admin_id=%s 크롤링 파이프라인 오류", admin_id)
+            has_error = True
             results.append(
                 AdminCrawlResult(
                     admin_id=admin_id,
@@ -92,8 +101,17 @@ async def trigger_crawl(
                 )
             )
 
-    return TriggerResponse(
+    response = TriggerResponse(
         admins_processed=len(admins),
         total_saved=total_saved,
         results=results,
     )
+
+    # 특정 관리자 타겟 실행에서 실패한 경우 Scheduler가 재시도할 수 있도록 500 반환
+    if body.admin_id and has_error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=response.model_dump(),
+        )
+
+    return response

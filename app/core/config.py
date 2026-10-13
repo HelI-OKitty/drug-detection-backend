@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     IMAGE_AI_API_KEY: str = ""
     X_BEARER_TOKEN: str = ""
     INTERNAL_API_KEY: str = ""
+    GCP_PROJECT_ID: str = ""
+    GCP_LOCATION: str = "asia-northeast3"
+    CLOUD_RUN_URL: str = ""
 
     model_config = {"env_file": ".env"}
 

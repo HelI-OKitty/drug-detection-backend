@@ -8,3 +8,4 @@ h11>=0.16.0
 PyJWT==2.10.1
 bcrypt==4.3.0
 httpx==0.28.1
+google-cloud-scheduler==2.16.1
