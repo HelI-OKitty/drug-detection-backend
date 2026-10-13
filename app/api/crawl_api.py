@@ -21,10 +21,10 @@ def _verify_crawl_secret(secret: str | None = Security(_crawl_secret_header)) ->
 
 class TriggerRequest(BaseModel):
     max_results: int = Field(
-        10,
-        ge=1,
+        100,
+        ge=10,
         le=100,
-        description="관리자 1명당 최대 수집 건수 (1~100). 테스트 시 작은 값 사용.",
+        description="관리자 1명당 최대 수집 건수 (10~100). X API 최솟값 10.",
     )
 
 
