@@ -98,7 +98,7 @@ async def test_trigger_crawl_pipeline_error_isolation():
     data = resp.json()
     assert data["admins_processed"] == 2
     assert data["total_saved"] == 2  # 성공한 관리자 1명의 saved
-    assert data["results"][0]["error"] == "X API 오류"
+    assert data["results"][0]["error"] == "크롤링 중 오류가 발생했습니다"
     assert data["results"][1]["error"] is None
 
 

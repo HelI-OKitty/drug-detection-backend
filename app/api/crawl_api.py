@@ -1,3 +1,6 @@
+import logging
+import secrets
+
 from fastapi import APIRouter, HTTPException, Security, status
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
@@ -6,13 +9,22 @@ from app.core.config import settings
 from app.db.mongo import db
 from app.services.crawl_pipeline_service import run_crawl_pipeline
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/crawl", tags=["crawl"])
 
 _crawl_secret_header = APIKeyHeader(name="X-Internal-Key", auto_error=False)
 
 
 def _verify_crawl_secret(secret: str | None = Security(_crawl_secret_header)) -> None:
-    if not settings.INTERNAL_API_KEY or secret != settings.INTERNAL_API_KEY:
+    if not settings.INTERNAL_API_KEY or not secret:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="유효하지 않은 내부 API 키입니다",
+        )
+    if not secrets.compare_digest(
+        secret.encode("utf-8"), settings.INTERNAL_API_KEY.encode("utf-8")
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="유효하지 않은 내부 API 키입니다",
@@ -68,14 +80,15 @@ async def trigger_crawl(
             result = await run_crawl_pipeline(admin_id, max_results=body.max_results)
             results.append(AdminCrawlResult(admin_id=admin_id, **result))
             total_saved += result["saved"]
-        except Exception as e:
+        except Exception:
+            logger.exception("admin_id=%s 크롤링 파이프라인 오류", admin_id)
             results.append(
                 AdminCrawlResult(
                     admin_id=admin_id,
                     total=0,
                     saved=0,
                     skipped=0,
-                    error=str(e),
+                    error="크롤링 중 오류가 발생했습니다",
                 )
             )
 
