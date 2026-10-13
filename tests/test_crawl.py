@@ -1,11 +1,7 @@
-import os
 from unittest.mock import AsyncMock, patch
 
 from bson import ObjectId
 from httpx import ASGITransport, AsyncClient
-
-os.environ.setdefault("MONGO_URI", "mongodb://localhost:27017")
-os.environ.setdefault("INTERNAL_API_KEY", "test-secret")
 
 from app.main import app
 
