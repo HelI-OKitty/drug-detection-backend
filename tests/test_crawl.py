@@ -26,9 +26,12 @@ async def test_trigger_crawl_success():
     """정상 케이스: 전체 관리자 크롤링 실행 후 결과 반환"""
     admin_docs = [make_admin_doc(aid) for aid in FAKE_ADMIN_IDS]
 
-    with patch("app.api.crawl_api.db") as mock_db, patch(
-        "app.api.crawl_api.run_crawl_pipeline", new_callable=AsyncMock
-    ) as mock_pipeline:
+    with (
+        patch("app.api.crawl_api.db") as mock_db,
+        patch(
+            "app.api.crawl_api.run_crawl_pipeline", new_callable=AsyncMock
+        ) as mock_pipeline,
+    ):
         mock_db.admins.find.return_value.to_list = AsyncMock(return_value=admin_docs)
         mock_pipeline.return_value = make_pipeline_result()
 
@@ -74,9 +77,12 @@ async def test_trigger_crawl_pipeline_error_isolation():
     """한 관리자 파이프라인 실패해도 나머지는 정상 처리"""
     admin_docs = [make_admin_doc(aid) for aid in FAKE_ADMIN_IDS]
 
-    with patch("app.api.crawl_api.db") as mock_db, patch(
-        "app.api.crawl_api.run_crawl_pipeline", new_callable=AsyncMock
-    ) as mock_pipeline:
+    with (
+        patch("app.api.crawl_api.db") as mock_db,
+        patch(
+            "app.api.crawl_api.run_crawl_pipeline", new_callable=AsyncMock
+        ) as mock_pipeline,
+    ):
         mock_db.admins.find.return_value.to_list = AsyncMock(return_value=admin_docs)
         mock_pipeline.side_effect = [
             Exception("X API 오류"),
