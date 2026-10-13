@@ -21,6 +21,7 @@ def make_settings_out(**kwargs) -> CrawlSettingsOut:
         keywords=kwargs.get("keywords", DEFAULT_KEYWORDS),
         max_results=kwargs.get("max_results", 100),
         crawl_enabled=kwargs.get("crawl_enabled", False),
+        schedule_hours=kwargs.get("schedule_hours", 1),
     )
 
 
@@ -194,6 +195,92 @@ async def test_update_crawl_settings_keywords_exceeded():
 
     app.dependency_overrides.clear()
     assert resp.status_code == 422
+
+
+async def test_update_crawl_settings_schedule_hours():
+    """schedule_hours 수정"""
+    app.dependency_overrides[get_current_admin] = mock_admin
+
+    with patch("app.api.crawl_settings_api.crawl_settings_service") as mock_svc:
+        mock_svc.update_settings = AsyncMock(
+            return_value=make_settings_out(schedule_hours=2)
+        )
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            resp = await client.patch(
+                "/crawl-settings",
+                json={"schedule_hours": 2},
+                headers=AUTH_HEADER,
+            )
+
+    app.dependency_overrides.clear()
+    assert resp.status_code == 200
+    assert resp.json()["schedule_hours"] == 2
+
+
+async def test_update_crawl_settings_schedule_hours_invalid():
+    """유효하지 않은 schedule_hours(5): 422 반환"""
+    app.dependency_overrides[get_current_admin] = mock_admin
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        resp = await client.patch(
+            "/crawl-settings",
+            json={"schedule_hours": 5},
+            headers=AUTH_HEADER,
+        )
+
+    app.dependency_overrides.clear()
+    assert resp.status_code == 422
+
+
+async def test_toggle_crawl_enabled_on():
+    """crawl_enabled true: since_id 리셋 + GCP job 생성"""
+    app.dependency_overrides[get_current_admin] = mock_admin
+
+    with patch("app.api.crawl_settings_api.crawl_settings_service") as mock_svc:
+        mock_svc.toggle_crawl_enabled = AsyncMock(
+            return_value=make_settings_out(crawl_enabled=True)
+        )
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            resp = await client.patch(
+                "/crawl-settings/toggle",
+                json={"crawl_enabled": True},
+                headers=AUTH_HEADER,
+            )
+
+    app.dependency_overrides.clear()
+    assert resp.status_code == 200
+    assert resp.json()["crawl_enabled"] is True
+
+
+async def test_toggle_crawl_enabled_off():
+    """crawl_enabled false: GCP job 삭제"""
+    app.dependency_overrides[get_current_admin] = mock_admin
+
+    with patch("app.api.crawl_settings_api.crawl_settings_service") as mock_svc:
+        mock_svc.toggle_crawl_enabled = AsyncMock(
+            return_value=make_settings_out(crawl_enabled=False)
+        )
+
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            resp = await client.patch(
+                "/crawl-settings/toggle",
+                json={"crawl_enabled": False},
+                headers=AUTH_HEADER,
+            )
+
+    app.dependency_overrides.clear()
+    assert resp.status_code == 200
+    assert resp.json()["crawl_enabled"] is False
 
 
 async def test_get_crawl_settings_unauthorized():
