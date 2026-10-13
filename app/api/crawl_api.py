@@ -32,11 +32,11 @@ def _verify_crawl_secret(secret: str | None = Security(_crawl_secret_header)) ->
 
 
 class TriggerRequest(BaseModel):
-    max_results: int = Field(
-        100,
+    max_results: int | None = Field(
+        None,
         ge=10,
         le=100,
-        description="관리자 1명당 최대 수집 건수 (10~100). X API 최솟값 10.",
+        description="최대 수집 건수 (10~100). 미지정 시 관리자 DB 설정값 사용.",
     )
 
 

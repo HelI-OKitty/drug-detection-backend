@@ -1,6 +1,19 @@
-# 마약 관련 키워드 사전 (placeholder)
-# TODO: 추후 DB 기반 키워드 관리 시스템으로 교체 예정
-DRUG_KEYWORDS: list[str] = [
-    "필로폰",
+DEFAULT_KEYWORDS: list[str] = [
+    "브액",
     "작대기",
+    "아이스",
+    "오방",
+    "시원한술",
+    "빙두",
+    "엑스터시",
+    "대마",
+    "필로폰",
+    "코카인",
+    "술친",
 ]
+
+MAX_CUSTOM_KEYWORDS = 2
+MAX_KEYWORDS = len(DEFAULT_KEYWORDS) + MAX_CUSTOM_KEYWORDS  # 13
+
+# 하위 호환용 — crawl_pipeline_service의 폴백으로만 사용
+DRUG_KEYWORDS: list[str] = DEFAULT_KEYWORDS

@@ -6,15 +6,18 @@ X API 크롤링 → AI 분석 → MongoDB 저장까지의 전체 흐름을 담�
 
 from datetime import datetime, timedelta, timezone
 
-from app.core.keywords import DRUG_KEYWORDS
 from app.db.mongo import db
+from app.services.crawl_settings_service import (
+    get_keywords_for_pipeline,
+    get_max_results_for_pipeline,
+)
 from app.services.detection_service import analyze_content
-from app.services.x_crawl_service import DEFAULT_MAX_RESULTS, crawl_all_keywords
+from app.services.x_crawl_service import crawl_all_keywords
 
 
 async def run_crawl_pipeline(
     admin_id: str,
-    max_results: int = DEFAULT_MAX_RESULTS,
+    max_results: int | None = None,
 ) -> dict:
     """X API 크롤링 → AI 분석 → MongoDB 저장 파이프라인 실행
 
@@ -31,7 +34,9 @@ async def run_crawl_pipeline(
 
     TODO: keywords를 DRUG_KEYWORDS 상수 대신 DB에서 admin별로 조회하도록 변경
     """
-    keywords = DRUG_KEYWORDS  # TODO: DB 기반 admin별 키워드로 교체
+    keywords = await get_keywords_for_pipeline(admin_id)
+    if max_results is None:
+        max_results = await get_max_results_for_pipeline(admin_id)
 
     # 마지막 크롤링 tweet ID 조회 (없으면 None → start_time 기준으로 수집)
     state = await db.crawl_state.find_one({"admin_id": admin_id})
