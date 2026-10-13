@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.auth_api import router as auth_router
 from app.api.crawl_api import router as crawl_router
+from app.api.crawl_settings_api import router as crawl_settings_router
 from app.api.dashboard_api import router as dashboard_router
 from app.api.detection_api import router as detection_router
 from app.api.health_api import router as health_router
@@ -41,6 +42,7 @@ app.include_router(dashboard_router)
 app.include_router(public_router)
 app.include_router(internal_router)
 app.include_router(crawl_router)
+app.include_router(crawl_settings_router)
 
 
 @app.exception_handler(HTTPException)

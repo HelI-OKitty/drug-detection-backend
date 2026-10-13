@@ -23,3 +23,5 @@ async def create_indexes():
     )
     # admin별 마지막 크롤링 tweet ID 관리
     await db.crawl_state.create_index("admin_id", unique=True)
+    # admin별 크롤링 설정
+    await db.crawl_settings.create_index("admin_id", unique=True)
