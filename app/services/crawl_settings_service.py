@@ -1,3 +1,5 @@
+from pymongo.errors import DuplicateKeyError
+
 from app.core.keywords import DEFAULT_KEYWORDS
 from app.db.mongo import db
 from app.schemas.crawl_settings import CrawlSettingsOut, CrawlSettingsUpdate
@@ -13,7 +15,12 @@ async def _get_or_create(admin_id: str) -> dict:
         "max_results": 100,
         "crawl_enabled": False,
     }
-    await db.crawl_settings.insert_one(default)
+    try:
+        await db.crawl_settings.insert_one(default)
+    except DuplicateKeyError:
+        # 동시 요청으로 이미 생성된 경우 재조회
+        doc = await db.crawl_settings.find_one({"admin_id": admin_id})
+        return doc  # type: ignore[return-value]
     return default
 
 
