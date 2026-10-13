@@ -45,7 +45,6 @@ async def get_recent(admin_id: str, limit: int = 10) -> list[dict]:
             "keyword": doc["keyword"],
             "author_id": doc["author_id"],
             "is_drug": doc.get("is_drug", True),
-            "score": doc["score"],
             "review_status": doc["review_status"],
             "detected_at": doc["detected_at"],
         }

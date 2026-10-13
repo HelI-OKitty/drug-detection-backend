@@ -20,7 +20,6 @@ def _to_out(doc: dict) -> DetectionOut:
         keyword=doc["keyword"],
         author_id=doc["author_id"],
         is_drug=doc.get("is_drug", True),
-        score=doc["score"],
         review_status=doc["review_status"],
         text_ai_result=doc.get("text_ai_result"),
         image_ai_results=doc.get("image_ai_results", []),
@@ -45,7 +44,6 @@ async def list_detections(admin_id: str = Depends(get_current_admin)):
             keyword=doc["keyword"],
             author_id=doc["author_id"],
             is_drug=doc.get("is_drug", True),
-            score=doc["score"],
             review_status=doc["review_status"],
             detected_at=doc["detected_at"],
         )

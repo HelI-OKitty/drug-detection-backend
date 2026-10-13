@@ -68,7 +68,6 @@ async def run_crawl_pipeline(
             "keyword": post.matched_keywords,
             "author_id": post.author_id,
             "is_drug": result.is_drug,
-            "score": result.score,
             "review_status": "unreviewed",
             "text_ai_result": (
                 result.text_ai_result.model_dump() if result.text_ai_result else None
