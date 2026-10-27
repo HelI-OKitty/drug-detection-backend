@@ -20,5 +20,15 @@ class PublicAnalyzeResponse(BaseModel):
         None, description="이미지에서 탐지된 객체 목록 (이미지 마약 탐지 시)"
     )
     ocr_text: str | None = Field(None, description="이미지에서 추출된 OCR 텍스트")
-    prob_drug: float | None = Field(None, description="텍스트 마약 확률")
-    prob_non_drug: float | None = Field(None, description="텍스트 비마약 확률")
+    text_source: str | None = Field(
+        None, description="텍스트 AI 판정 방식: 'model' (확률 기반) 또는 'rule' (키워드 규칙 기반)"
+    )
+    prob_drug: float | None = Field(
+        None, description="텍스트 마약 확률 (model 판정 시에만 존재, rule 판정 시 null)"
+    )
+    matched_terms: list[str] = Field(
+        default_factory=list, description="rule 판정 시 매칭된 키워드 목록"
+    )
+    matched_intents: list[str] = Field(
+        default_factory=list, description="rule 판정 시 매칭된 의도 목록"
+    )

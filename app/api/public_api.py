@@ -16,6 +16,7 @@ async def public_analyze(body: PublicAnalyzeRequest):
     result = await analyze_content(body.text, images)
 
     first_img = result.image_ai_results[0] if result.image_ai_results else None
+    text = result.text_ai_result
     return PublicAnalyzeResponse(
         is_drug=result.is_drug,
         detected_objects=(
@@ -24,8 +25,8 @@ async def public_analyze(body: PublicAnalyzeRequest):
             else None
         ),
         ocr_text=(first_img.ocr_text or None) if first_img else None,
-        prob_drug=result.text_ai_result.prob_drug if result.text_ai_result else None,
-        prob_non_drug=(
-            result.text_ai_result.prob_non_drug if result.text_ai_result else None
-        ),
+        text_source=text.source if text else None,
+        prob_drug=text.prob_drug if text else None,
+        matched_terms=text.matched_terms if text else [],
+        matched_intents=text.matched_intents if text else [],
     )

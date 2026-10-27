@@ -22,7 +22,7 @@ async def run_crawl_pipeline(
     """X API 크롤링 → AI 분석 → MongoDB 저장 파이프라인 실행
 
     - since_id를 DB에서 조회해 이미 크롤링한 게시글은 X API에서 아예 제외
-    - is_drug=True인 경우만 MongoDB에 저장
+    - 양성·음성 모두 is_drug 필드와 함께 MongoDB에 저장
     - 크롤링 완료 후 last_tweet_id 갱신
 
     Args:
