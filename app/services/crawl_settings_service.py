@@ -80,7 +80,7 @@ async def toggle_crawl_enabled(
     if data.crawl_enabled:
         latest = await db.detections.find_one(
             {"admin_id": admin_id},
-            sort=[("detected_at", -1)],
+            sort=[("source_id", -1)],
         )
         if latest:
             await db.crawl_state.update_one(
