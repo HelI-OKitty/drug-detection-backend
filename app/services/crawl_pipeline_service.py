@@ -57,9 +57,7 @@ async def run_crawl_pipeline(
     for post in posts:
         try:
             images = (
-                list(zip(post.image_urls, post.image_b64s))
-                if post.image_b64s
-                else None
+                list(zip(post.image_urls, post.image_b64s)) if post.image_b64s else None
             )
             result = await analyze_content(post.content, images)
 
