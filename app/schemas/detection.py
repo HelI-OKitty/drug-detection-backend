@@ -27,7 +27,7 @@ class DetectionOut(BaseModel):
     )
     keyword: list[str] = Field(..., description="매칭된 키워드 목록")
     author_id: str = Field(..., description="작성자 username")
-    score: float = Field(..., ge=0.0, le=1.0, description="종합 AI 탐지 점수")
+    is_drug: bool = Field(..., description="마약 탐지 여부")
     review_status: ReviewStatus = Field(..., description="검토 상태")
     text_ai_result: TextAIResponse | None = Field(
         None, description="텍스트 AI 분석 결과"
@@ -50,7 +50,7 @@ class DetectionListItem(BaseModel):
     )
     keyword: list[str] = Field(..., description="매칭된 키워드 목록")
     author_id: str = Field(..., description="작성자 username")
-    score: float = Field(..., description="종합 AI 탐지 점수")
+    is_drug: bool = Field(..., description="마약 탐지 여부")
     review_status: ReviewStatus = Field(..., description="검토 상태")
     detected_at: datetime = Field(..., description="탐지 저장 일시")
 

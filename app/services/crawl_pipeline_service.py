@@ -22,7 +22,7 @@ async def run_crawl_pipeline(
     """X API 크롤링 → AI 분석 → MongoDB 저장 파이프라인 실행
 
     - since_id를 DB에서 조회해 이미 크롤링한 게시글은 X API에서 아예 제외
-    - is_drug=True인 경우만 MongoDB에 저장
+    - 양성·음성 모두 is_drug 필드와 함께 MongoDB에 저장
     - 크롤링 완료 후 last_tweet_id 갱신
 
     Args:
@@ -51,20 +51,13 @@ async def run_crawl_pipeline(
     last_tweet_id = since_id
 
     for post in posts:
-        # 수집된 게시글 중 최신 tweet ID 추적
         if last_tweet_id is None or int(post.source_id) > int(last_tweet_id):
             last_tweet_id = post.source_id
 
-        # AI 분석
         images = (
             list(zip(post.image_urls, post.image_b64s)) if post.image_b64s else None
         )
         result = await analyze_content(post.content, images)
-
-        # 마약으로 탐지된 경우만 저장
-        if not result.is_drug:
-            skipped += 1
-            continue
 
         doc = {
             "platform": post.platform,
@@ -74,7 +67,7 @@ async def run_crawl_pipeline(
             "created_at_source": post.created_at_source,
             "keyword": post.matched_keywords,
             "author_id": post.author_id,
-            "score": result.score,
+            "is_drug": result.is_drug,
             "review_status": "unreviewed",
             "text_ai_result": (
                 result.text_ai_result.model_dump() if result.text_ai_result else None
@@ -84,7 +77,10 @@ async def run_crawl_pipeline(
             "detected_at": datetime.now(timezone(timedelta(hours=9))),
         }
         await db.detections.insert_one(doc)
-        saved += 1
+        if result.is_drug:
+            saved += 1
+        else:
+            skipped += 1
 
     # 수집된 게시글이 있으면 last_tweet_id 갱신
     if last_tweet_id and last_tweet_id != since_id:

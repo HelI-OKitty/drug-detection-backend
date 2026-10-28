@@ -38,7 +38,7 @@ async def toggle_crawl_enabled(
 ) -> CrawlSettingsOut:
     """자동 크롤링 활성화/비활성화 토글
 
-    - true: since_id 리셋 + GCP Scheduler job 생성
+    - true: detections 최신 source_id로 since_id 복원 + GCP Scheduler job 생성
     - false: GCP Scheduler job 삭제
     """
     try:

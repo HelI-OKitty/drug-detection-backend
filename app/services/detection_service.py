@@ -1,10 +1,3 @@
-"""
-공통 탐지 서비스
-
-public API(수동 입력)와 크롤링 파이프라인(자동) 양쪽에서 재사용하는
-AI 분석 + score 계산 로직을 담당한다.
-"""
-
 from dataclasses import dataclass, field
 
 from app.schemas.ai import TextAIResponse
@@ -15,7 +8,6 @@ from app.services.ai_service import call_image_ai, call_text_ai
 @dataclass
 class AnalysisResult:
     is_drug: bool
-    score: float
     text_ai_result: TextAIResponse | None = None
     image_ai_results: list[ImageAIResultWithUrl] = field(default_factory=list)
 
@@ -69,35 +61,9 @@ async def analyze_content(
 
     text_prediction = text_ai_result.prediction if text_ai_result else 0
     is_drug = bool(image_prediction == 1 or text_prediction == 1)
-    score = _calculate_score(text_ai_result, image_ai_results)
 
     return AnalysisResult(
         is_drug=is_drug,
-        score=score,
         text_ai_result=text_ai_result,
         image_ai_results=image_ai_results,
     )
-
-
-def _calculate_score(
-    text_result: TextAIResponse | None,
-    image_results: list[ImageAIResultWithUrl],
-) -> float:
-    """텍스트 AI + 이미지 AI 결과를 합산하여 종합 점수(0~1) 반환
-
-    이미지 없음: 텍스트 확률값 그대로
-    이미지 있음: 텍스트 60% + 이미지 최대값 40% 가중 평균
-    """
-    text_score = 0.0
-    if text_result:
-        text_score = (
-            text_result.prob_drug
-            if text_result.prob_drug is not None
-            else float(text_result.prediction)
-        )
-
-    if not image_results:
-        return round(text_score, 4)
-
-    image_score = max(r.image_score for r in image_results)
-    return round(text_score * 0.6 + image_score * 0.4, 4)
