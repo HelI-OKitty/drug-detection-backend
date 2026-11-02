@@ -49,6 +49,7 @@ class AdminCrawlResult(BaseModel):
     total: int
     saved: int
     skipped: int
+    failed: int = 0
     error: str | None = None
 
 
