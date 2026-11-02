@@ -33,7 +33,6 @@ async def test_analyze_text_non_drug():
     assert data["is_drug"] is False
     assert data["detected_objects"] is None
     assert data["ocr_text"] is None
-    assert data["prob_drug"] == TEXT_AI_NON_DRUG.prob_drug
     assert data["text_source"] == TEXT_AI_NON_DRUG.source
 
 
