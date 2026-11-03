@@ -23,6 +23,9 @@ class PublicAnalyzeResponse(BaseModel):
     text_source: str | None = Field(
         None, description="텍스트 AI 판정 방식: 'model' 또는 'rule'"
     )
+    prob_drug: float | None = Field(
+        None, description="마약 확률 (model 판정 시에만 존재, rule 판정 시 null)"
+    )
     prob_drug_percent: float | None = Field(
         None, description="마약 확률 % (model 판정 시에만 존재, rule 판정 시 null)"
     )
