@@ -52,6 +52,9 @@ async def test_list_detections():
     app.dependency_overrides.clear()
     assert resp.status_code == 200
     assert isinstance(resp.json(), list)
+    item = resp.json()[0]
+    assert "text_ai_result" in item
+    assert "image_ai_results" in item
 
 
 async def test_get_detection_not_found():

@@ -45,6 +45,8 @@ async def list_detections(admin_id: str = Depends(get_current_admin)):
             author_id=doc["author_id"],
             is_drug=doc.get("is_drug", True),
             review_status=doc["review_status"],
+            text_ai_result=doc.get("text_ai_result"),
+            image_ai_results=doc.get("image_ai_results", []),
             detected_at=doc["detected_at"],
         )
         async for doc in cursor

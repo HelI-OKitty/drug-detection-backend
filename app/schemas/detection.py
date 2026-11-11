@@ -52,6 +52,12 @@ class DetectionListItem(BaseModel):
     author_id: str = Field(..., description="작성자 username")
     is_drug: bool = Field(..., description="마약 탐지 여부")
     review_status: ReviewStatus = Field(..., description="검토 상태")
+    text_ai_result: TextAIResponse | None = Field(
+        None, description="텍스트 AI 분석 결과"
+    )
+    image_ai_results: list[ImageAIResultWithUrl] = Field(
+        default_factory=list, description="이미지별 AI 분석 결과"
+    )
     detected_at: datetime = Field(..., description="탐지 저장 일시")
 
 
