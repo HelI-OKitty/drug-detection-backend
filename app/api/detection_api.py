@@ -54,7 +54,7 @@ async def list_detections(admin_id: str = Depends(get_current_admin)):
             text_ai_result=(
                 TextAIListItem(
                     prediction=t["prediction"],
-                    prob_drug_percent=t.get("prob_drug_percent"),
+                    text_score=t.get("text_score") or t.get("prob_drug_percent"),
                     matched_terms=t.get("matched_terms", []),
                     matched_intents=t.get("matched_intents", []),
                 )

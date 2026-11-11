@@ -20,7 +20,7 @@ class TextAIListItem(BaseModel):
     """목록 조회용 텍스트 AI 요약 (source 제외)"""
 
     prediction: int = Field(..., description="0: 비마약, 1: 마약")
-    prob_drug_percent: float | None = Field(None, description="마약 확률 %")
+    text_score: float | None = Field(None, description="텍스트 AI 마약 확률 %")
     matched_terms: list[str] = Field(default_factory=list)
     matched_intents: list[str] = Field(default_factory=list)
 
