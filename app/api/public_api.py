@@ -26,7 +26,6 @@ async def public_analyze(body: PublicAnalyzeRequest):
         ),
         ocr_text=(first_img.ocr_text or None) if first_img else None,
         text_source=text.source if text else None,
-        prob_drug=text.prob_drug if text else None,
         prob_drug_percent=text.prob_drug_percent if text else None,
         matched_terms=text.matched_terms if text else [],
         matched_intents=text.matched_intents if text else [],
