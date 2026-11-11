@@ -16,6 +16,15 @@ class DetectedObject(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
 
 
+class ImageAIResult(BaseModel):
+    """이미지 AI 분석 결과 (URL 없는 공통 스키마)"""
+
+    prediction: int  # 0: 비마약, 1: 마약
+    image_score: float = Field(ge=0.0, le=1.0)
+    detected_objects: list[DetectedObject]
+    ocr_text: str
+
+
 class ImageAIResponse(BaseModel):
     success: Literal[True] = True
     prediction: int  # 0: 비마약, 1: 마약

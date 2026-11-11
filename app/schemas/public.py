@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, model_validator
 
-from app.schemas.ai import DetectedObject
+from app.schemas.ai import ImageAIResult, TextAIResponse
 
 
 class PublicAnalyzeRequest(BaseModel):
@@ -16,19 +16,9 @@ class PublicAnalyzeRequest(BaseModel):
 
 class PublicAnalyzeResponse(BaseModel):
     is_drug: bool = Field(..., description="마약 게시글 여부")
-    detected_objects: list[DetectedObject] | None = Field(
-        None, description="이미지에서 탐지된 객체 목록 (이미지 마약 탐지 시)"
+    text_ai_result: TextAIResponse | None = Field(
+        None, description="텍스트 AI 분석 결과"
     )
-    ocr_text: str | None = Field(None, description="이미지에서 추출된 OCR 텍스트")
-    text_source: str | None = Field(
-        None, description="텍스트 AI 판정 방식: 'model' 또는 'rule'"
-    )
-    text_score: float | None = Field(
-        None, description="텍스트 AI 마약 확률 % (model 판정 시, rule 판정 시 null)"
-    )
-    matched_terms: list[str] = Field(
-        default_factory=list, description="rule 판정 시 매칭된 키워드 목록"
-    )
-    matched_intents: list[str] = Field(
-        default_factory=list, description="rule 판정 시 매칭된 의도 목록"
+    image_ai_result: ImageAIResult | None = Field(
+        None, description="이미지 AI 분석 결과"
     )

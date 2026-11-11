@@ -31,9 +31,8 @@ async def test_analyze_text_non_drug():
     assert resp.status_code == 200
     data = resp.json()
     assert data["is_drug"] is False
-    assert data["detected_objects"] is None
-    assert data["ocr_text"] is None
-    assert data["text_source"] == TEXT_AI_NON_DRUG.source
+    assert data["image_ai_result"] is None
+    assert data["text_ai_result"]["source"] == TEXT_AI_NON_DRUG.source
 
 
 async def test_analyze_text_drug():
@@ -53,8 +52,8 @@ async def test_analyze_text_drug():
     assert resp.status_code == 200
     data = resp.json()
     assert data["is_drug"] is True
-    assert data["detected_objects"] is None
-    assert data["ocr_text"] is None
+    assert data["image_ai_result"] is None
+    assert data["text_ai_result"]["prediction"] == 1
 
 
 async def test_analyze_image_only_non_drug():
@@ -80,8 +79,8 @@ async def test_analyze_image_only_non_drug():
     assert resp.status_code == 200
     data = resp.json()
     assert data["is_drug"] is False
-    assert data["detected_objects"] is None
-    assert data["ocr_text"] is None
+    assert data["image_ai_result"] is not None
+    assert data["text_ai_result"] is None
     mock_image.assert_awaited_once()
     mock_text.assert_not_awaited()
 
@@ -103,9 +102,10 @@ async def test_analyze_image_only_drug():
     assert resp.status_code == 200
     data = resp.json()
     assert data["is_drug"] is True
-    assert data["detected_objects"] is not None
-    assert len(data["detected_objects"]) == 1
-    assert data["detected_objects"][0]["class_name"] == "drug"
+    assert data["image_ai_result"] is not None
+    assert data["image_ai_result"]["prediction"] == 1
+    assert len(data["image_ai_result"]["detected_objects"]) == 1
+    assert data["image_ai_result"]["detected_objects"][0]["class_name"] == "drug"
 
 
 async def test_analyze_image_with_ocr_drug():
@@ -131,7 +131,7 @@ async def test_analyze_image_with_ocr_drug():
     assert resp.status_code == 200
     data = resp.json()
     assert data["is_drug"] is True
-    assert data["ocr_text"] == IMAGE_AI_NON_DRUG_WITH_OCR.ocr_text
+    assert data["image_ai_result"]["ocr_text"] == IMAGE_AI_NON_DRUG_WITH_OCR.ocr_text
 
 
 async def test_analyze_image_and_text_drug():
