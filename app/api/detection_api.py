@@ -4,7 +4,13 @@ from pymongo import ReturnDocument
 
 from app.core.security import get_current_admin
 from app.db.mongo import db
-from app.schemas.detection import DetectionListItem, DetectionOut, ReviewStatusUpdate
+from app.schemas.detection import (
+    DetectionListItem,
+    DetectionOut,
+    ImageAIListItem,
+    ReviewStatusUpdate,
+    TextAIListItem,
+)
 
 router = APIRouter(prefix="/detections", tags=["detection"])
 
@@ -45,8 +51,24 @@ async def list_detections(admin_id: str = Depends(get_current_admin)):
             author_id=doc["author_id"],
             is_drug=doc.get("is_drug", True),
             review_status=doc["review_status"],
-            text_ai_result=doc.get("text_ai_result"),
-            image_ai_results=doc.get("image_ai_results", []),
+            text_ai_result=(
+                TextAIListItem(
+                    prediction=t["prediction"],
+                    prob_drug_percent=t.get("prob_drug_percent"),
+                    matched_terms=t.get("matched_terms", []),
+                    matched_intents=t.get("matched_intents", []),
+                )
+                if (t := doc.get("text_ai_result"))
+                else None
+            ),
+            image_ai_results=[
+                ImageAIListItem(
+                    prediction=img["prediction"],
+                    image_score=img["image_score"],
+                    ocr_text=1 if img.get("ocr_text") else 0,
+                )
+                for img in doc.get("image_ai_results", [])
+            ],
             detected_at=doc["detected_at"],
         )
         async for doc in cursor
