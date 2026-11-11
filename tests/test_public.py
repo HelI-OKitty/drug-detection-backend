@@ -131,7 +131,9 @@ async def test_analyze_image_with_ocr_drug():
     assert resp.status_code == 200
     data = resp.json()
     assert data["is_drug"] is True
-    assert data["image_ai_results"][0]["ocr_text"] == IMAGE_AI_NON_DRUG_WITH_OCR.ocr_text  # noqa: E501
+    assert (
+        data["image_ai_results"][0]["ocr_text"] == IMAGE_AI_NON_DRUG_WITH_OCR.ocr_text
+    )  # noqa: E501
 
 
 async def test_analyze_image_and_text_drug():
