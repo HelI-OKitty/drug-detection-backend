@@ -30,7 +30,7 @@ class ImageAIListItem(BaseModel):
 
     prediction: int = Field(..., description="0: 비마약, 1: 마약")
     image_score: float = Field(..., ge=0.0, le=1.0, description="이미지 AI 탐지 점수")
-    ocr_text: int = Field(..., description="OCR 텍스트 존재 여부 (0: 없음, 1: 있음)")
+    has_ocr_text: bool = Field(..., description="OCR 텍스트 존재 여부")
 
 
 class DetectionOut(BaseModel):

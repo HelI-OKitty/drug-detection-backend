@@ -65,7 +65,7 @@ async def list_detections(admin_id: str = Depends(get_current_admin)):
                 ImageAIListItem(
                     prediction=img["prediction"],
                     image_score=img["image_score"],
-                    ocr_text=1 if img.get("ocr_text") else 0,
+                    has_ocr_text=bool(img.get("ocr_text")),
                 )
                 for img in doc.get("image_ai_results", [])
             ],
