@@ -6,8 +6,7 @@ from pydantic import BaseModel, Field
 class TextAIResponse(BaseModel):
     prediction: int  # 0: 비마약, 1: 마약
     source: str  # "rule" or "model"
-    prob_drug: float | None
-    prob_drug_percent: float | None
+    text_score: float | None
     matched_terms: list[str]
     matched_intents: list[str]
 

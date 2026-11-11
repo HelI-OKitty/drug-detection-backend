@@ -16,6 +16,23 @@ class ImageAIResultWithUrl(BaseModel):
     ocr_text: str = Field(default="")
 
 
+class TextAIListItem(BaseModel):
+    """목록 조회용 텍스트 AI 요약 (source 제외)"""
+
+    prediction: int = Field(..., description="0: 비마약, 1: 마약")
+    text_score: float | None = Field(None, description="텍스트 AI 마약 확률 %")
+    matched_terms: list[str] = Field(default_factory=list)
+    matched_intents: list[str] = Field(default_factory=list)
+
+
+class ImageAIListItem(BaseModel):
+    """목록 조회용 이미지 AI 요약 (image_url, detected_objects 제외)"""
+
+    prediction: int = Field(..., description="0: 비마약, 1: 마약")
+    image_score: float = Field(..., ge=0.0, le=1.0, description="이미지 AI 탐지 점수")
+    has_ocr_text: bool = Field(..., description="OCR 텍스트 존재 여부")
+
+
 class DetectionOut(BaseModel):
     id: str = Field(..., description="탐지 결과 ID")
     platform: str = Field(..., description="플랫폼 구분 (예: x, instagram)")
@@ -52,6 +69,12 @@ class DetectionListItem(BaseModel):
     author_id: str = Field(..., description="작성자 username")
     is_drug: bool = Field(..., description="마약 탐지 여부")
     review_status: ReviewStatus = Field(..., description="검토 상태")
+    text_ai_result: TextAIListItem | None = Field(
+        None, description="텍스트 AI 분석 결과 요약"
+    )
+    image_ai_results: list[ImageAIListItem] = Field(
+        default_factory=list, description="이미지별 AI 분석 결과 요약"
+    )
     detected_at: datetime = Field(..., description="탐지 저장 일시")
 
 
