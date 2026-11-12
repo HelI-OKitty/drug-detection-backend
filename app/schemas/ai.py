@@ -25,8 +25,8 @@ class TextAIModelResponse(BaseModel):
 
     text: str
     clean_text: str
-    prediction: int  # 0: 비마약, 1: 마약
-    label: str  # "마약" or "비마약"
+    prediction: int | None  # 0: 비마약, 1: 마약, None: 분석 불가
+    label: str  # "마약" or "비마약" or "분석 불가"
     prob_non_drug: float | None = None
     prob_drug: float | None = None
     prob_non_drug_percent: float | None = None
@@ -41,7 +41,7 @@ class TextAIModelResponse(BaseModel):
 class TextAIResponse(BaseModel):
     """프론트엔드 응답용 스키마"""
 
-    prediction: int  # 0: 비마약, 1: 마약
+    prediction: int | None  # 0: 비마약, 1: 마약, None: 분석 불가
     source: str  # "rule" or "model"
     text_score: float | None
     matched_terms: list[str]

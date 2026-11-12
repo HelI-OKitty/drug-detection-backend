@@ -96,7 +96,7 @@ async def analyze_content(
         except Exception:
             logger.warning("텍스트 AI 호출 실패, 텍스트 판정 생략")
 
-    text_prediction = text_ai_result.prediction if text_ai_result else 0
+    text_prediction = (text_ai_result.prediction or 0) if text_ai_result else 0
     is_drug = bool(image_prediction == 1 or text_prediction == 1)
 
     return AnalysisResult(
