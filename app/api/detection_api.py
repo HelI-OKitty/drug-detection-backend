@@ -4,6 +4,7 @@ from pymongo import ReturnDocument
 
 from app.core.security import get_current_admin
 from app.db.mongo import db
+from app.schemas.ai import TextAIResponse
 from app.schemas.detection import (
     DetectionListItem,
     DetectionOut,
@@ -27,7 +28,17 @@ def _to_out(doc: dict) -> DetectionOut:
         author_id=doc["author_id"],
         is_drug=doc.get("is_drug", True),
         review_status=doc["review_status"],
-        text_ai_result=doc.get("text_ai_result"),
+        text_ai_result=(
+            TextAIResponse(
+                prediction=t["prediction"],
+                source=t["source"],
+                text_score=t.get("prob_drug_percent"),
+                matched_terms=t.get("matched_terms", []),
+                matched_intents=t.get("matched_intents", []),
+            )
+            if (t := doc.get("text_ai_result"))
+            else None
+        ),
         image_ai_results=doc.get("image_ai_results", []),
         admin_id=doc["admin_id"],
         detected_at=doc["detected_at"],
@@ -54,7 +65,7 @@ async def list_detections(admin_id: str = Depends(get_current_admin)):
             text_ai_result=(
                 TextAIListItem(
                     prediction=t["prediction"],
-                    text_score=t.get("text_score") or t.get("prob_drug_percent"),
+                    text_score=t.get("prob_drug_percent"),
                     matched_terms=t.get("matched_terms", []),
                     matched_intents=t.get("matched_intents", []),
                 )
@@ -65,7 +76,7 @@ async def list_detections(admin_id: str = Depends(get_current_admin)):
                 ImageAIListItem(
                     prediction=img["prediction"],
                     image_score=img["image_score"],
-                    has_ocr_text=bool(img.get("ocr_text")),
+                    has_ocr_text=bool(img.get("ocr_text_results")),
                 )
                 for img in doc.get("image_ai_results", [])
             ],

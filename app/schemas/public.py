@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, model_validator
 
-from app.schemas.ai import ImageAIResult, TextAIResponse
+from app.schemas.ai import ImageAIResponse, TextAIResponse
 
 
 class PublicAnalyzeRequest(BaseModel):
@@ -19,6 +19,6 @@ class PublicAnalyzeResponse(BaseModel):
     text_ai_result: TextAIResponse | None = Field(
         None, description="텍스트 AI 분석 결과"
     )
-    image_ai_results: list[ImageAIResult] = Field(
+    image_ai_results: list[ImageAIResponse] = Field(
         default_factory=list, description="이미지별 AI 분석 결과"
     )

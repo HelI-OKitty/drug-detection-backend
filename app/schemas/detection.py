@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from app.schemas.ai import DetectedObject, TextAIResponse
+from app.schemas.ai import DetectedObject, OcrTextAnalysis, TextAIResponse
 
 ReviewStatus = Literal["unreviewed", "reviewing", "confirmed"]
 
@@ -13,7 +13,7 @@ class ImageAIResultWithUrl(BaseModel):
     prediction: int = Field(..., description="0: 비마약, 1: 마약")
     image_score: float = Field(..., ge=0.0, le=1.0, description="이미지 AI 탐지 점수")
     detected_objects: list[DetectedObject] = Field(default_factory=list)
-    ocr_text: str = Field(default="")
+    ocr_text_results: list[OcrTextAnalysis] = Field(default_factory=list)
 
 
 class TextAIListItem(BaseModel):
