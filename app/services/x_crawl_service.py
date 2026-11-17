@@ -7,6 +7,7 @@ X(트위터) API v2 크롤링 서비스
 """
 
 import base64
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
@@ -14,6 +15,8 @@ import httpx
 
 from app.core.config import settings
 from app.core.keywords import DRUG_KEYWORDS
+
+logger = logging.getLogger(__name__)
 
 KST = timezone(timedelta(hours=9))
 
