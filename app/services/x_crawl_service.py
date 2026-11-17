@@ -216,6 +216,11 @@ async def _crawl_query(
                     raise RuntimeError(
                         f"X API 치명적 오류 {resp.status_code} — 크롤링 중단"
                     )
+                logger.warning(
+                    "X API 비치명적 오류 status=%s body=%r — 크롤링 중단",
+                    resp.status_code,
+                    resp.text[:500],
+                )
                 break
 
             data = resp.json()
