@@ -78,18 +78,6 @@ async def toggle_crawl_enabled(
         return _to_out(doc)
 
     if data.crawl_enabled:
-        latest = await db.detections.find_one(
-            {"admin_id": admin_id},
-            sort=[("source_id", -1)],
-        )
-        if latest:
-            await db.crawl_state.update_one(
-                {"admin_id": admin_id},
-                {"$set": {"last_tweet_id": latest["source_id"]}},
-                upsert=True,
-            )
-        else:
-            await db.crawl_state.delete_one({"admin_id": admin_id})
         schedule_interval = doc.get("schedule_interval", DEFAULT_SCHEDULE_INTERVAL)
         await gcp_scheduler_service.create_job(admin_id, schedule_interval)
     else:

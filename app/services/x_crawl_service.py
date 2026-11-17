@@ -7,6 +7,7 @@ X(트위터) API v2 크롤링 서비스
 """
 
 import base64
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
@@ -14,6 +15,8 @@ import httpx
 
 from app.core.config import settings
 from app.core.keywords import DRUG_KEYWORDS
+
+logger = logging.getLogger(__name__)
 
 KST = timezone(timedelta(hours=9))
 
@@ -216,6 +219,11 @@ async def _crawl_query(
                     raise RuntimeError(
                         f"X API 치명적 오류 {resp.status_code} — 크롤링 중단"
                     )
+                logger.warning(
+                    "X API 비치명적 오류 status=%s body=%r — 크롤링 중단",
+                    resp.status_code,
+                    resp.text[:500],
+                )
                 break
 
             data = resp.json()
