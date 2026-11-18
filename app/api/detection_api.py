@@ -4,11 +4,12 @@ from pymongo import ReturnDocument
 
 from app.core.security import get_current_admin
 from app.db.mongo import db
-from app.schemas.ai import TextAIResponse
+from app.schemas.ai import OcrTextAnalysis, TextAIResponse
 from app.schemas.detection import (
     DetectionListItem,
     DetectionOut,
     ImageAIListItem,
+    ImageAIResultWithUrl,
     ReviewStatusUpdate,
     TextAIListItem,
 )
@@ -17,6 +18,37 @@ router = APIRouter(prefix="/detections", tags=["detection"])
 
 
 def _to_out(doc: dict) -> DetectionOut:
+    t = doc.get("text_ai_result")
+    db_ocr_results = t.get("ocr_text_results", []) if t else []
+
+    # text_ai_result.ocr_text_results를 ocr_text가 있는 이미지 순서대로 매핑
+    ocr_result_iter = iter(db_ocr_results)
+    image_results = []
+    for img in doc.get("image_ai_results", []):
+        ocr_text_results = []
+        if img.get("ocr_text"):
+            ocr_result = next(ocr_result_iter, None)
+            if ocr_result:
+                ocr_text_results = [
+                    OcrTextAnalysis(
+                        ocr_text=ocr_result["text"],
+                        prediction=ocr_result["prediction"],
+                        ocr_text_score=ocr_result.get("prob_drug_percent"),
+                        matched_terms=ocr_result.get("matched_terms", []),
+                        matched_intents=ocr_result.get("matched_intents", []),
+                    )
+                ]
+        image_results.append(
+            ImageAIResultWithUrl(
+                image_url=img["image_url"],
+                prediction=img["prediction"],
+                image_score=img["image_score"],
+                detected_objects=img.get("detected_objects", []),
+                ocr_text=img.get("ocr_text", ""),
+                ocr_text_results=ocr_text_results,
+            )
+        )
+
     return DetectionOut(
         id=str(doc["_id"]),
         platform=doc["platform"],
@@ -36,10 +68,10 @@ def _to_out(doc: dict) -> DetectionOut:
                 matched_terms=t.get("matched_terms", []),
                 matched_intents=t.get("matched_intents", []),
             )
-            if (t := doc.get("text_ai_result"))
+            if t
             else None
         ),
-        image_ai_results=doc.get("image_ai_results", []),
+        image_ai_results=image_results,
         admin_id=doc["admin_id"],
         detected_at=doc["detected_at"],
     )
