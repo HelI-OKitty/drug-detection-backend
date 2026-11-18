@@ -54,13 +54,13 @@ class DetectedObject(BaseModel):
 
 
 class ImageAIModelResponse(BaseModel):
-    """이미지 AI 서버 응답 스키마"""
+    """이미지 AI 서버 배치 응답 스키마"""
 
     success: Literal[True] = True
-    prediction: int  # 0: 비마약, 1: 마약
-    image_score: float = Field(ge=0.0, le=1.0)
-    detected_objects: list[DetectedObject]
-    ocr_text: str
+    predictions: list[int]  # 이미지별 예측값 (0: 비마약, 1: 마약)
+    image_scores: list[float]  # 이미지별 탐지 점수
+    detected_objects: list[list[DetectedObject]]  # 이미지별 탐지 객체
+    ocr_texts: list[str]  # 이미지별 OCR 텍스트 (텍스트 없으면 빈 문자열)
 
 
 class OcrTextAnalysis(BaseModel):

@@ -76,7 +76,10 @@ async def run_crawl_pipeline(
                     if result.text_ai_result
                     else None
                 ),
-                "image_ai_results": [r.model_dump() for r in result.image_ai_results],
+                "image_ai_results": [
+                    r.model_dump(exclude={"ocr_text_results"})
+                    for r in result.image_ai_results
+                ],
                 "admin_id": admin_id,
                 "detected_at": datetime.now(timezone(timedelta(hours=9))),
             }
