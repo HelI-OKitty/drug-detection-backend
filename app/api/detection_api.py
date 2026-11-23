@@ -77,9 +77,7 @@ def _to_out(doc: dict) -> DetectionOut:
 
 @router.get("", response_model=list[DetectionListItem])
 async def list_detections(admin_id: str = Depends(get_current_admin)):
-    cursor = db.detections.find({"admin_id": admin_id, "is_drug": True}).sort(
-        "detected_at", -1
-    )
+    cursor = db.detections.find({"admin_id": admin_id}).sort("detected_at", -1)
     return [
         DetectionListItem(
             id=str(doc["_id"]),
