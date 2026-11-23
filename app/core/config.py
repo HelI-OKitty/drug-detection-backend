@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     GCP_PROJECT_ID: str = ""
     GCP_LOCATION: str = "asia-northeast3"
     CLOUD_RUN_URL: str = ""
+    GCS_BUCKET_NAME: str = ""
 
     model_config = {"env_file": ".env"}
 

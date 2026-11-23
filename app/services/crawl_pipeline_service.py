@@ -13,6 +13,7 @@ from app.services.crawl_settings_service import (
     get_max_results_for_pipeline,
 )
 from app.services.detection_service import analyze_content
+from app.services.gcs_service import upload_image_to_gcs
 from app.services.x_crawl_service import crawl_all_keywords
 
 logger = logging.getLogger(__name__)
@@ -56,9 +57,19 @@ async def run_crawl_pipeline(
 
     for post in posts:
         try:
-            images = (
-                list(zip(post.image_urls, post.image_b64s)) if post.image_b64s else None
-            )
+            images: list[tuple[str, str]] | None = None
+            if post.image_b64s:
+                gcs_pairs: list[tuple[str, str]] = []
+                for i, (orig_url, b64) in enumerate(
+                    zip(post.image_urls, post.image_b64s)
+                ):
+                    try:
+                        gcs_url = await upload_image_to_gcs(b64, post.source_id, i)
+                        gcs_pairs.append((gcs_url, b64))
+                    except Exception:
+                        logger.warning("GCS 업로드 실패, 이미지 제외: %s", orig_url)
+                images = gcs_pairs if gcs_pairs else None
+
             result = await analyze_content(post.content, images)
 
             doc = {

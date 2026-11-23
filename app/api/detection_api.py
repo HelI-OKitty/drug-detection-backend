@@ -12,6 +12,7 @@ from app.schemas.detection import (
     ImageAISummary,
     ReviewStatusUpdate,
 )
+from app.services.gcs_service import resolve_image_url
 
 router = APIRouter(prefix="/detections", tags=["detection"])
 
@@ -35,7 +36,7 @@ def _build_image_summary(doc: dict) -> list[ImageAISummary]:
     return summaries
 
 
-def _to_out(doc: dict) -> DetectionOut:
+async def _to_out(doc: dict) -> DetectionOut:
     t = doc.get("text_ai_result")
     db_ocr_results = t.get("ocr_text_results", []) if t else []
 
@@ -58,7 +59,7 @@ def _to_out(doc: dict) -> DetectionOut:
                 ]
         image_results.append(
             ImageAIDetailResponse(
-                image_url=img["image_url"],
+                image_url=await resolve_image_url(img["image_url"]),
                 prediction=img["prediction"],
                 image_score=img["image_score"],
                 detected_objects=img.get("detected_objects", []),
@@ -138,7 +139,7 @@ async def get_detection(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="탐지 결과를 찾을 수 없습니다",
         )
-    return _to_out(doc)
+    return await _to_out(doc)
 
 
 @router.patch("/{detection_id}/status", response_model=DetectionOut)
@@ -157,7 +158,7 @@ async def update_review_status(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="탐지 결과를 찾을 수 없습니다",
         )
-    return _to_out(doc)
+    return await _to_out(doc)
 
 
 @router.delete("/{detection_id}", status_code=status.HTTP_204_NO_CONTENT)

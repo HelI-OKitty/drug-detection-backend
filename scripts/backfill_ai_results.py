@@ -19,18 +19,22 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-async def _download_images(image_urls: list[str]) -> list[str]:
-    """이미지 URL 리스트를 base64 문자열 리스트로 변환"""
-    b64s: list[str] = []
+async def _download_images(image_urls: list[str]) -> list[tuple[str, str]]:
+    """이미지 URL 리스트 중 다운로드 성공한 (url, base64) 쌍만 반환"""
+    result: list[tuple[str, str]] = []
     async with httpx.AsyncClient(timeout=10.0) as client:
         for url in image_urls:
             try:
                 resp = await client.get(url)
                 if resp.status_code == 200:
-                    b64s.append(base64.b64encode(resp.content).decode())
+                    result.append((url, base64.b64encode(resp.content).decode()))
+                else:
+                    logger.warning(
+                        "이미지 다운로드 실패 (status=%s): %s", resp.status_code, url
+                    )
             except Exception:
                 logger.warning("이미지 다운로드 실패: %s", url)
-    return b64s
+    return result
 
 
 async def backfill():
@@ -52,9 +56,9 @@ async def backfill():
         ]
 
         try:
-            # 이미지 다운로드
-            b64s = await _download_images(image_urls) if image_urls else []
-            images = list(zip(image_urls, b64s)) if b64s else None
+            # 이미지 다운로드 (실패한 URL은 자동 제거)
+            downloaded = await _download_images(image_urls) if image_urls else []
+            images = downloaded if downloaded else None
 
             # AI 분석
             result = await analyze_content(content, images)
