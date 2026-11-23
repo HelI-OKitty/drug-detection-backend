@@ -72,10 +72,15 @@ async def resolve_image_url(image_url: str, expiration_minutes: int = 60) -> str
 
     - gs:// URI: GCS Signed URL 생성 (기본 1시간 유효)
     - 그 외 (기존 X CDN URL 등): 변환 없이 그대로 반환
+    - 실패 시 빈 문자열 반환 (API 500 방지)
     """
     if not image_url.startswith(_GCS_PREFIX):
         return image_url
     object_name = image_url[len(_GCS_PREFIX) :]
-    return await asyncio.to_thread(
-        _generate_signed_url_sync, object_name, expiration_minutes
-    )
+    try:
+        return await asyncio.to_thread(
+            _generate_signed_url_sync, object_name, expiration_minutes
+        )
+    except Exception:
+        logger.exception("Signed URL 생성 실패: %s", image_url)
+        return ""
