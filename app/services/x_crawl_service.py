@@ -197,14 +197,15 @@ async def _crawl_query(
     max_results: int = DEFAULT_MAX_RESULTS,
     since_id: str | None = None,
 ) -> list[ParsedPost]:
-    """OR 쿼리로 트윗을 수집하여 ParsedPost 리스트 반환 (페이지네이션 지원)
+    """OR 쿼리로 트윗을 수집하여 ParsedPost 리스트 반환
 
-    since_id 있음: 전체 페이지네이션 — 누락 없이 since_id 이후 모든 트윗 수집
-    since_id 없음: max_results 상한 적용 — 초기 수집 시 7일치 무제한 수집 방지
+    항상 max_results 상한 적용 — 과금 방지
+    since_id 있음: since_id 이후 최신 트윗 max_results개 수집 (중복 방지)
+    since_id 없음: 최신 트윗 max_results개만 수집
     반환 순서: 오래된 트윗부터 (oldest-first) — detected_at/created_at_source 순서 일치
     """
     posts: list[ParsedPost] = []
-    cap: int | None = None if since_id else max_results
+    cap = max_results
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         next_token: str | None = None
