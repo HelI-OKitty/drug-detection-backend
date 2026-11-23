@@ -43,7 +43,7 @@ async def analyze_content(
             logger.warning("이미지 AI 호출 실패, 이미지 판정 생략")
 
         if img_result:
-            for i, (url, _) in enumerate(images):
+            for i, (url, b64) in enumerate(images):
                 image_ai_results.append(
                     ImageAIResultWithUrl(
                         image_url=url,
