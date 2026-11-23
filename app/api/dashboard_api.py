@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Query
 
 from app.core.security import get_current_admin
-from app.schemas.dashboard import DashboardSummary
+from app.schemas.dashboard import DashboardAnalytics, DashboardSummary
 from app.schemas.detection import DetectionListItem
-from app.services.dashboard_service import get_recent, get_summary
+from app.services.dashboard_service import get_analytics, get_recent, get_summary
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -11,6 +11,11 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 @router.get("/summary", response_model=DashboardSummary)
 async def dashboard_summary(admin_id: str = Depends(get_current_admin)):
     return await get_summary(admin_id)
+
+
+@router.get("/analytics", response_model=DashboardAnalytics)
+async def dashboard_analytics(admin_id: str = Depends(get_current_admin)):
+    return await get_analytics(admin_id)
 
 
 @router.get("/recent", response_model=list[DetectionListItem])
