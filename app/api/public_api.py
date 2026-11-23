@@ -12,7 +12,7 @@ router = APIRouter(prefix="/public", tags=["public"])
     status_code=status.HTTP_200_OK,
 )
 async def public_analyze(body: PublicAnalyzeRequest):
-    from app.schemas.ai import ImageAIResponse, TextAIResponse
+    from app.schemas.ai import ImageAIResponse, OcrTextAnalysis, TextAIResponse
 
     images = [("", b64) for b64 in body.images] if body.images else None
     result = await analyze_content(body.text, images)
@@ -27,6 +27,16 @@ async def public_analyze(body: PublicAnalyzeRequest):
                 text_score=text.prob_drug_percent,
                 matched_terms=text.matched_terms,
                 matched_intents=text.matched_intents,
+                ocr_text_results=[
+                    OcrTextAnalysis(
+                        ocr_text=r.text,
+                        prediction=r.prediction,
+                        ocr_text_score=r.prob_drug_percent,
+                        matched_terms=r.matched_terms,
+                        matched_intents=r.matched_intents,
+                    )
+                    for r in text.ocr_text_results
+                ],
             )
             if text
             else None

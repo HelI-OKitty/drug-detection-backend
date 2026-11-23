@@ -67,6 +67,16 @@ def _to_out(doc: dict) -> DetectionOut:
                 text_score=t.get("prob_drug_percent"),
                 matched_terms=t.get("matched_terms", []),
                 matched_intents=t.get("matched_intents", []),
+                ocr_text_results=[
+                    OcrTextAnalysis(
+                        ocr_text=r["text"],
+                        prediction=r["prediction"],
+                        ocr_text_score=r.get("prob_drug_percent"),
+                        matched_terms=r.get("matched_terms", []),
+                        matched_intents=r.get("matched_intents", []),
+                    )
+                    for r in db_ocr_results
+                ],
             )
             if t
             else None
@@ -108,7 +118,7 @@ async def list_detections(admin_id: str = Depends(get_current_admin)):
                 ImageAIListItem(
                     prediction=img["prediction"],
                     image_score=img["image_score"],
-                    has_ocr_text=bool(img.get("ocr_text_results")),
+                    has_ocr_text=bool(img.get("ocr_text")),
                 )
                 for img in doc.get("image_ai_results", [])
             ],

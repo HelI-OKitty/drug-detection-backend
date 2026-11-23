@@ -14,7 +14,9 @@ class ImageAIResultWithUrl(BaseModel):
     image_score: float = Field(..., ge=0.0, le=1.0, description="이미지 AI 탐지 점수")
     detected_objects: list[DetectedObject] = Field(default_factory=list)
     ocr_text: str = Field(default="", description="이미지 AI 추출 OCR 원문 (DB 저장용)")
-    ocr_text_results: list[OcrTextAnalysis] = Field(default_factory=list, description="OCR 분석 결과 (API 응답용)")
+    ocr_text_results: list[OcrTextAnalysis] = Field(
+        default_factory=list, description="OCR 분석 결과 (API 응답용)"
+    )
 
 
 class TextAIListItem(BaseModel):

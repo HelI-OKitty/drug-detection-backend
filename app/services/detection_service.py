@@ -57,9 +57,7 @@ async def analyze_content(
                     image_prediction = 1
 
             # OCR 텍스트가 있는 이미지 인덱스 추적
-            ocr_indexed = [
-                (i, t) for i, t in enumerate(img_result.ocr_texts) if t
-            ]
+            ocr_indexed = [(i, t) for i, t in enumerate(img_result.ocr_texts) if t]
             ocr_texts = [t for _, t in ocr_indexed]
 
             if text or ocr_texts:
