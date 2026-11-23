@@ -16,6 +16,25 @@ from app.schemas.detection import (
 router = APIRouter(prefix="/detections", tags=["detection"])
 
 
+def _build_image_summary(doc: dict) -> list[ImageAISummary]:
+    t = doc.get("text_ai_result")
+    ocr_results = t.get("ocr_text_results", []) if t else []
+    ocr_iter = iter(ocr_results)
+    summaries = []
+    for img in doc.get("image_ai_results", []):
+        has_ocr = bool(img.get("ocr_text"))
+        ocr_result = next(ocr_iter, None) if has_ocr else None
+        summaries.append(
+            ImageAISummary(
+                prediction=img["prediction"],
+                image_score=img["image_score"],
+                has_ocr_text=has_ocr,
+                is_ocr_drug=ocr_result.get("prediction") == 1 if ocr_result else False,
+            )
+        )
+    return summaries
+
+
 def _to_out(doc: dict) -> DetectionOut:
     t = doc.get("text_ai_result")
     db_ocr_results = t.get("ocr_text_results", []) if t else []
@@ -101,14 +120,7 @@ async def list_detections(admin_id: str = Depends(get_current_admin)):
                 if (t := doc.get("text_ai_result"))
                 else None
             ),
-            image_ai_results=[
-                ImageAISummary(
-                    prediction=img["prediction"],
-                    image_score=img["image_score"],
-                    has_ocr_text=bool(img.get("ocr_text")),
-                )
-                for img in doc.get("image_ai_results", [])
-            ],
+            image_ai_results=_build_image_summary(doc),
             detected_at=doc["detected_at"],
         )
         async for doc in cursor
