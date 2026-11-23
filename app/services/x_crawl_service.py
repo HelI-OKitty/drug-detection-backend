@@ -142,7 +142,9 @@ async def fetch_tweet_by_url(url: str) -> ParsedPost:
         media_map = {m["media_key"]: m for m in includes.get("media", [])}
 
         post = _parse_tweet(tweet, users, media_map)
-        post.image_b64s = await _download_images(post.image_urls)
+        downloaded = await _download_images(post.image_urls)
+        post.image_urls = [u for u, _ in downloaded]
+        post.image_b64s = [b for _, b in downloaded]
         return post
 
 
@@ -244,7 +246,9 @@ async def _crawl_query(
 
             for tweet in tweets:
                 post = _parse_tweet(tweet, users, media_map)
-                post.image_b64s = await _download_images(post.image_urls)
+                downloaded = await _download_images(post.image_urls)
+                post.image_urls = [u for u, _ in downloaded]
+                post.image_b64s = [b for _, b in downloaded]
                 posts.append(post)
                 if cap and len(posts) >= cap:
                     break
@@ -300,15 +304,18 @@ def _extract_image_urls(tweet: dict, media_map: dict[str, dict]) -> list[str]:
     return urls
 
 
-async def _download_images(image_urls: list[str]) -> list[str]:
-    """이미지 URL 리스트를 base64 문자열 리스트로 변환"""
-    b64s: list[str] = []
+async def _download_images(image_urls: list[str]) -> list[tuple[str, str]]:
+    """이미지 URL 리스트 중 다운로드 성공한 (url, base64) 쌍만 반환
+
+    실패한 URL은 제외하므로 반환 길이가 입력보다 짧을 수 있다.
+    """
+    result: list[tuple[str, str]] = []
     async with httpx.AsyncClient(timeout=10.0) as client:
         for url in image_urls:
             try:
                 resp = await client.get(url)
                 if resp.status_code == 200:
-                    b64s.append(base64.b64encode(resp.content).decode())
+                    result.append((url, base64.b64encode(resp.content).decode()))
             except Exception:
                 continue
-    return b64s
+    return result
