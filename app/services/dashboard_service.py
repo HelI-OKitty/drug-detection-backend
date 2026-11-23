@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta, timezone
+import asyncio
+from datetime import datetime, timezone
 
 from app.db.mongo import db
 
@@ -7,25 +8,25 @@ async def get_summary(admin_id: str) -> dict:
     now = datetime.now(timezone.utc)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    base = {"admin_id": admin_id, "is_drug": True}
-    total = await db.detections.count_documents(base)
-    today = await db.detections.count_documents(
-        {**base, "detected_at": {"$gte": today_start}}
-    )
-    unconfirmed = await db.detections.count_documents(
-        {**base, "review_status": "unreviewed"}
+    base_positive = {"admin_id": admin_id, "is_drug": True}
+
+    total, today, unreviewed, negative = await asyncio.gather(
+        db.detections.count_documents(base_positive),
+        db.detections.count_documents(
+            {**base_positive, "detected_at": {"$gte": today_start}}
+        ),
+        db.detections.count_documents(
+            {**base_positive, "review_status": "unreviewed"}
+        ),
+        db.detections.count_documents({"admin_id": admin_id, "is_drug": False}),
     )
 
-    trend = []
-    for i in range(6, -1, -1):
-        day_start = (today_start - timedelta(days=i)).replace(tzinfo=timezone.utc)
-        day_end = day_start + timedelta(days=1)
-        count = await db.detections.count_documents(
-            {**base, "detected_at": {"$gte": day_start, "$lt": day_end}}
-        )
-        trend.append({"date": day_start.strftime("%Y-%m-%d"), "count": count})
-
-    return {"total": total, "today": today, "unconfirmed": unconfirmed, "trend": trend}
+    return {
+        "total": total,
+        "today": today,
+        "unreviewed": unreviewed,
+        "verdict": {"positive": total, "negative": negative},
+    }
 
 
 async def get_recent(admin_id: str, limit: int = 10) -> list[dict]:
