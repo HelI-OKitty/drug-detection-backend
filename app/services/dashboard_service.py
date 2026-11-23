@@ -15,9 +15,7 @@ async def get_summary(admin_id: str) -> dict:
         db.detections.count_documents(
             {**base_positive, "detected_at": {"$gte": today_start}}
         ),
-        db.detections.count_documents(
-            {**base_positive, "review_status": "unreviewed"}
-        ),
+        db.detections.count_documents({**base_positive, "review_status": "unreviewed"}),
         db.detections.count_documents({"admin_id": admin_id, "is_drug": False}),
     )
 
