@@ -20,8 +20,29 @@ def make_summary() -> dict:
     return {
         "total": 42,
         "today": 5,
-        "unconfirmed": 10,
-        "trend": [{"date": f"2026-08-{20 + i:02d}", "count": i + 1} for i in range(7)],
+        "unreviewed": 10,
+        "verdict": {"positive": 42, "negative": 3},
+    }
+
+
+def make_analytics() -> dict:
+    return {
+        "trend": [
+            {"date": f"2026-08-{20 + i:02d}", "positive": i + 1, "negative": 0}
+            for i in range(7)
+        ],
+        "text": {
+            "analyzed": 30,
+            "top_terms": [{"term": "브액", "count": 15}],
+            "top_intents": [{"intent": "판매", "count": 10}],
+            "source": {"model": 20, "rule": 10},
+        },
+        "image": {
+            "total_images": 50,
+            "objects": [{"class_name": "Meth", "count": 8}],
+            "ocr_with_text": 20,
+            "ocr_without_text": 30,
+        },
     }
 
 
@@ -58,8 +79,8 @@ async def test_dashboard_summary():
     data = resp.json()
     assert "total" in data
     assert "today" in data
-    assert "unconfirmed" in data
-    assert len(data["trend"]) == 7
+    assert "unreviewed" in data
+    assert "verdict" in data
 
 
 async def test_dashboard_summary_counts():
@@ -76,7 +97,31 @@ async def test_dashboard_summary_counts():
     data = resp.json()
     assert data["total"] == 42
     assert data["today"] == 5
-    assert data["unconfirmed"] == 10
+    assert data["unreviewed"] == 10
+    assert data["verdict"]["positive"] == 42
+    assert data["verdict"]["negative"] == 3
+
+
+async def test_dashboard_analytics():
+    app.dependency_overrides[get_current_admin] = mock_admin
+
+    with patch(
+        "app.api.dashboard_api.get_analytics",
+        AsyncMock(return_value=make_analytics()),
+    ):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url=BASE_URL
+        ) as client:
+            resp = await client.get("/dashboard/analytics", headers=AUTH)
+
+    app.dependency_overrides.clear()
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data["trend"]) == 7
+    assert "text" in data
+    assert "image" in data
+    assert data["text"]["analyzed"] == 30
+    assert data["image"]["total_images"] == 50
 
 
 async def test_dashboard_recent():
