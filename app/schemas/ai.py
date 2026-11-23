@@ -46,32 +46,27 @@ class TextAIResponse(BaseModel):
     text_score: float | None
     matched_terms: list[str]
     matched_intents: list[str]
-    ocr_text_results: list["OcrTextAnalysis"] = Field(default_factory=list)
 
 
 class DetectedObject(BaseModel):
+    """이미지 AI 서버 응답의 detected_objects 배열 단일 항목"""
+
     class_name: str
     confidence: float = Field(ge=0.0, le=1.0)
 
 
-class ImageAISingleResponse(BaseModel):
-    """이미지 AI 서버 단수 응답 스키마"""
+class ImageAIPrediction(BaseModel):
+    """이미지 AI 서버 응답 배열의 단일 항목"""
 
     success: Literal[True] = True
     prediction: int
-    image_score: float
+    image_score: float = Field(ge=0.0, le=1.0)
     detected_objects: list[DetectedObject]
-    ocr_texts: list[str] = Field(default_factory=list)
+    ocr_text: str = ""
 
 
-class ImageAIModelResponse(BaseModel):
-    """이미지 AI 배치 처리 결과 (단수 응답 N개를 조립한 내부 스키마)"""
-
-    success: Literal[True] = True
-    predictions: list[int]  # 이미지별 예측값 (0: 비마약, 1: 마약)
-    image_scores: list[float]  # 이미지별 탐지 점수
-    detected_objects: list[list[DetectedObject]]  # 이미지별 탐지 객체
-    ocr_texts: list[str]  # 이미지별 OCR 텍스트 (텍스트 없으면 빈 문자열)
+# 이미지 AI 서버 응답 스키마 (배열)
+ImageAIModelResponse = list[ImageAIPrediction]
 
 
 class OcrTextAnalysis(BaseModel):
