@@ -8,10 +8,9 @@ from app.schemas.ai import OcrTextAnalysis, TextAIResponse
 from app.schemas.detection import (
     DetectionListItem,
     DetectionOut,
-    ImageAIListItem,
-    ImageAIResultWithUrl,
+    ImageAIDetailResponse,
+    ImageAISummary,
     ReviewStatusUpdate,
-    TextAIListItem,
 )
 
 router = APIRouter(prefix="/detections", tags=["detection"])
@@ -39,12 +38,11 @@ def _to_out(doc: dict) -> DetectionOut:
                     )
                 ]
         image_results.append(
-            ImageAIResultWithUrl(
+            ImageAIDetailResponse(
                 image_url=img["image_url"],
                 prediction=img["prediction"],
                 image_score=img["image_score"],
                 detected_objects=img.get("detected_objects", []),
-                ocr_text=img.get("ocr_text", ""),
                 ocr_text_results=ocr_text_results,
             )
         )
@@ -67,16 +65,6 @@ def _to_out(doc: dict) -> DetectionOut:
                 text_score=t.get("prob_drug_percent"),
                 matched_terms=t.get("matched_terms", []),
                 matched_intents=t.get("matched_intents", []),
-                ocr_text_results=[
-                    OcrTextAnalysis(
-                        ocr_text=r["text"],
-                        prediction=r["prediction"],
-                        ocr_text_score=r.get("prob_drug_percent"),
-                        matched_terms=r.get("matched_terms", []),
-                        matched_intents=r.get("matched_intents", []),
-                    )
-                    for r in db_ocr_results
-                ],
             )
             if t
             else None
@@ -105,8 +93,9 @@ async def list_detections(admin_id: str = Depends(get_current_admin)):
             is_drug=doc.get("is_drug", True),
             review_status=doc["review_status"],
             text_ai_result=(
-                TextAIListItem(
+                TextAIResponse(
                     prediction=t["prediction"],
+                    source=t["source"],
                     text_score=t.get("prob_drug_percent"),
                     matched_terms=t.get("matched_terms", []),
                     matched_intents=t.get("matched_intents", []),
@@ -115,7 +104,7 @@ async def list_detections(admin_id: str = Depends(get_current_admin)):
                 else None
             ),
             image_ai_results=[
-                ImageAIListItem(
+                ImageAISummary(
                     prediction=img["prediction"],
                     image_score=img["image_score"],
                     has_ocr_text=bool(img.get("ocr_text")),

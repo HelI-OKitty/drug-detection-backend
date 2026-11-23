@@ -47,17 +47,19 @@ async def analyze_content(
                 image_ai_results.append(
                     ImageAIResultWithUrl(
                         image_url=url,
-                        prediction=img_result.predictions[i],
-                        image_score=img_result.image_scores[i],
-                        detected_objects=img_result.detected_objects[i],
-                        ocr_text=img_result.ocr_texts[i],
+                        prediction=img_result[i].prediction,
+                        image_score=img_result[i].image_score,
+                        detected_objects=img_result[i].detected_objects,
+                        ocr_text=img_result[i].ocr_text,
                     )
                 )
-                if img_result.predictions[i] == 1:
+                if img_result[i].prediction == 1:
                     image_prediction = 1
 
             # OCR 텍스트가 있는 이미지 인덱스 추적
-            ocr_indexed = [(i, t) for i, t in enumerate(img_result.ocr_texts) if t]
+            ocr_indexed = [
+                (i, r.ocr_text) for i, r in enumerate(img_result) if r.ocr_text
+            ]
             ocr_texts = [t for _, t in ocr_indexed]
 
             if text or ocr_texts:
