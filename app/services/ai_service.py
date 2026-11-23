@@ -3,7 +3,7 @@ import logging
 import httpx
 
 from app.core.config import settings
-from app.schemas.ai import ImageAIModelResponse, TextAIModelResponse
+from app.schemas.ai import ImageAIModelResponse, ImageAIPrediction, TextAIModelResponse
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ async def call_text_ai(
     return TextAIModelResponse(**response.json())
 
 
-async def call_image_ai(image: str) -> ImageAIModelResponse:
+async def call_image_ai(images: list[str]) -> ImageAIModelResponse:
     headers = (
         {"X-API-Key": settings.IMAGE_AI_API_KEY} if settings.IMAGE_AI_API_KEY else {}
     )
@@ -40,10 +40,10 @@ async def call_image_ai(image: str) -> ImageAIModelResponse:
         response = await client.post(
             f"{settings.IMAGE_AI_URL}/predict",
             headers=headers,
-            json={"image_base64": image},
+            json=[{"image_base64": b64} for b64 in images],
         )
     if response.status_code != 200 or not response.content:
         raise RuntimeError(
             f"이미지 AI 오류 status={response.status_code} body={response.text!r}"
         )
-    return ImageAIModelResponse(**response.json())
+    return [ImageAIPrediction(**item) for item in response.json()]

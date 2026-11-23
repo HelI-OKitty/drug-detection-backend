@@ -160,7 +160,7 @@ async def test_analyze_image_and_text_drug():
     # 텍스트 AI는 text, ocr_texts 분리 호출됨
     call_args = mock_text.call_args
     assert call_args[0][0] == "추가 텍스트"
-    assert call_args[0][1] == [IMAGE_AI_NON_DRUG_WITH_OCR.ocr_text]
+    assert call_args[0][1] == [IMAGE_AI_NON_DRUG_WITH_OCR[0].ocr_text]
 
 
 async def test_analyze_missing_both():

@@ -3,80 +3,75 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from app.schemas.ai import DetectedObject, OcrTextAnalysis, TextAIResponse
+from app.schemas.ai import (
+    DetectedObject,
+    ImageAIResponse,
+    OcrTextAnalysis,
+    TextAIResponse,
+)
 
 ReviewStatus = Literal["unreviewed", "reviewing", "confirmed"]
 
 
 class ImageAIResultWithUrl(BaseModel):
-    image_url: str = Field(..., description="원본 이미지 URL")
-    prediction: int = Field(..., description="0: 비마약, 1: 마약")
-    image_score: float = Field(..., ge=0.0, le=1.0, description="이미지 AI 탐지 점수")
+    """내부/DB 저장용 이미지 AI 결과"""
+
+    image_url: str
+    prediction: int
+    image_score: float = Field(..., ge=0.0, le=1.0)
     detected_objects: list[DetectedObject] = Field(default_factory=list)
-    ocr_text_results: list[OcrTextAnalysis] = Field(default_factory=list)
+    ocr_text: str = Field(default="", description="이미지 AI 추출 OCR 원문 (DB 저장용)")
+    ocr_text_results: list[OcrTextAnalysis] = Field(
+        default_factory=list, description="OCR 분석 결과 (API 응답용)"
+    )
 
 
-class TextAIListItem(BaseModel):
-    """목록 조회용 텍스트 AI 요약 (source 제외)"""
+class ImageAIDetailResponse(ImageAIResponse):
+    """탐지 상세 FE 응답용 이미지 AI 결과 (image_url 포함)"""
 
-    prediction: int = Field(..., description="0: 비마약, 1: 마약")
-    text_score: float | None = Field(None, description="텍스트 AI 마약 확률 %")
-    matched_terms: list[str] = Field(default_factory=list)
-    matched_intents: list[str] = Field(default_factory=list)
+    image_url: str
 
 
-class ImageAIListItem(BaseModel):
-    """목록 조회용 이미지 AI 요약 (image_url, detected_objects 제외)"""
+class ImageAISummary(BaseModel):
+    """탐지 목록 FE 응답용 이미지 AI 요약"""
 
-    prediction: int = Field(..., description="0: 비마약, 1: 마약")
-    image_score: float = Field(..., ge=0.0, le=1.0, description="이미지 AI 탐지 점수")
-    has_ocr_text: bool = Field(..., description="OCR 텍스트 존재 여부")
+    prediction: int
+    image_score: float = Field(..., ge=0.0, le=1.0)
+    has_ocr_text: bool
 
 
 class DetectionOut(BaseModel):
-    id: str = Field(..., description="탐지 결과 ID")
-    platform: str = Field(..., description="플랫폼 구분 (예: x, instagram)")
-    source_id: str = Field(..., description="플랫폼 내 게시글 고유 ID (중복 방지용)")
-    source_url: str = Field(..., description="원본 게시글 URL")
-    content: str = Field(..., description="게시글 텍스트")
-    created_at_source: datetime = Field(
-        ..., description="게시글 작성 일시 (플랫폼 기준)"
-    )
-    keyword: list[str] = Field(..., description="매칭된 키워드 목록")
-    author_id: str = Field(..., description="작성자 username")
-    is_drug: bool = Field(..., description="마약 탐지 여부")
-    review_status: ReviewStatus = Field(..., description="검토 상태")
-    text_ai_result: TextAIResponse | None = Field(
-        None, description="텍스트 AI 분석 결과"
-    )
-    image_ai_results: list[ImageAIResultWithUrl] = Field(
-        default_factory=list, description="이미지별 AI 분석 결과"
-    )
-    admin_id: str = Field(..., description="담당 관리자 ID")
-    detected_at: datetime = Field(..., description="탐지 저장 일시")
+    id: str
+    platform: str
+    source_id: str
+    source_url: str
+    content: str
+    created_at_source: datetime
+    keyword: list[str]
+    author_id: str
+    is_drug: bool
+    review_status: ReviewStatus
+    text_ai_result: TextAIResponse | None = None
+    image_ai_results: list[ImageAIDetailResponse] = Field(default_factory=list)
+    admin_id: str
+    detected_at: datetime
 
 
 class DetectionListItem(BaseModel):
-    id: str = Field(..., description="탐지 결과 ID")
-    platform: str = Field(..., description="플랫폼 구분")
-    source_id: str = Field(..., description="플랫폼 내 게시글 고유 ID")
-    source_url: str = Field(..., description="원본 게시글 URL")
-    content: str = Field(..., description="게시글 텍스트")
-    created_at_source: datetime = Field(
-        ..., description="게시글 작성 일시 (플랫폼 기준)"
-    )
-    keyword: list[str] = Field(..., description="매칭된 키워드 목록")
-    author_id: str = Field(..., description="작성자 username")
-    is_drug: bool = Field(..., description="마약 탐지 여부")
-    review_status: ReviewStatus = Field(..., description="검토 상태")
-    text_ai_result: TextAIListItem | None = Field(
-        None, description="텍스트 AI 분석 결과 요약"
-    )
-    image_ai_results: list[ImageAIListItem] = Field(
-        default_factory=list, description="이미지별 AI 분석 결과 요약"
-    )
-    detected_at: datetime = Field(..., description="탐지 저장 일시")
+    id: str
+    platform: str
+    source_id: str
+    source_url: str
+    content: str
+    created_at_source: datetime
+    keyword: list[str]
+    author_id: str
+    is_drug: bool
+    review_status: ReviewStatus
+    text_ai_result: TextAIResponse | None = None
+    image_ai_results: list[ImageAISummary] = Field(default_factory=list)
+    detected_at: datetime
 
 
 class ReviewStatusUpdate(BaseModel):
-    review_status: ReviewStatus = Field(..., description="변경할 검토 상태")
+    review_status: ReviewStatus

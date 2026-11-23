@@ -49,18 +49,24 @@ class TextAIResponse(BaseModel):
 
 
 class DetectedObject(BaseModel):
+    """이미지 AI 서버 응답의 detected_objects 배열 단일 항목"""
+
     class_name: str
     confidence: float = Field(ge=0.0, le=1.0)
 
 
-class ImageAIModelResponse(BaseModel):
-    """이미지 AI 서버 응답 스키마"""
+class ImageAIPrediction(BaseModel):
+    """이미지 AI 서버 응답 배열의 단일 항목"""
 
     success: Literal[True] = True
-    prediction: int  # 0: 비마약, 1: 마약
+    prediction: int
     image_score: float = Field(ge=0.0, le=1.0)
     detected_objects: list[DetectedObject]
-    ocr_text: str
+    ocr_text: str = ""
+
+
+# 이미지 AI 서버 응답 스키마 (배열)
+ImageAIModelResponse = list[ImageAIPrediction]
 
 
 class OcrTextAnalysis(BaseModel):
