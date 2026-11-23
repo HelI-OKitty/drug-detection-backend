@@ -46,6 +46,7 @@ class TextAIResponse(BaseModel):
     text_score: float | None
     matched_terms: list[str]
     matched_intents: list[str]
+    ocr_text_results: list["OcrTextAnalysis"] = Field(default_factory=list)
 
 
 class DetectedObject(BaseModel):
@@ -53,8 +54,18 @@ class DetectedObject(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
 
 
+class ImageAISingleResponse(BaseModel):
+    """이미지 AI 서버 단수 응답 스키마"""
+
+    success: Literal[True] = True
+    prediction: int
+    image_score: float
+    detected_objects: list[DetectedObject]
+    ocr_texts: list[str] = Field(default_factory=list)
+
+
 class ImageAIModelResponse(BaseModel):
-    """이미지 AI 서버 배치 응답 스키마"""
+    """이미지 AI 배치 처리 결과 (단수 응답 N개를 조립한 내부 스키마)"""
 
     success: Literal[True] = True
     predictions: list[int]  # 이미지별 예측값 (0: 비마약, 1: 마약)
