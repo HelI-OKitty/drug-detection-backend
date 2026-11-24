@@ -18,7 +18,8 @@ def _parent() -> str:
 
 
 def _job_name(admin_id: str) -> str:
-    return f"{_parent()}/jobs/drug-crawl-admin-{admin_id}"
+    env = settings.DB_NAME.replace("_", "-")
+    return f"{_parent()}/jobs/drug-crawl-{env}-{admin_id}"
 
 
 def _cron(schedule_interval: int) -> str:

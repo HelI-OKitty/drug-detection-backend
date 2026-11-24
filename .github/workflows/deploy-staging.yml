@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to Cloud Run
+    name: Deploy to Cloud Run (Staging)
     runs-on: ubuntu-latest
 
     steps:
@@ -25,14 +25,14 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/drug-detection/app:${{ github.sha }} .
-          docker push asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/drug-detection/app:${{ github.sha }}
+          docker build -t asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/drug-detection/app-staging:${{ github.sha }} .
+          docker push asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/drug-detection/app-staging:${{ github.sha }}
 
       - name: Deploy to Cloud Run
         run: |
-          gcloud run deploy drug-detection \
-            --image asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/drug-detection/app:${{ github.sha }} \
+          gcloud run deploy drug-detection-staging \
+            --image asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/drug-detection/app-staging:${{ github.sha }} \
             --region asia-northeast3 \
             --platform managed \
             --allow-unauthenticated \
-            --set-env-vars "^|^MONGO_URI=${{ secrets.MONGO_URI }}|JWT_SECRET=${{ secrets.JWT_SECRET }}|DB_NAME=drug_db|TEXT_AI_URL=${{ secrets.TEXT_AI_URL }}|TEXT_AI_API_KEY=${{ secrets.TEXT_AI_API_KEY }}|IMAGE_AI_URL=${{ secrets.IMAGE_AI_URL }}|IMAGE_AI_API_KEY=${{ secrets.IMAGE_AI_API_KEY }}|X_BEARER_TOKEN=${{ secrets.X_BEARER_TOKEN }}|INTERNAL_API_KEY=${{ secrets.INTERNAL_API_KEY }}|CORS_ORIGINS=[\"https://hello-capstone.shop\"]|GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}|GCP_LOCATION=asia-northeast3|CLOUD_RUN_URL=${{ secrets.CLOUD_RUN_URL }}|GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}"
+            --set-env-vars "^|^MONGO_URI=${{ secrets.MONGO_URI }}|JWT_SECRET=${{ secrets.JWT_SECRET }}|DB_NAME=drug_db|TEXT_AI_URL=${{ secrets.TEXT_AI_URL }}|TEXT_AI_API_KEY=${{ secrets.TEXT_AI_API_KEY }}|IMAGE_AI_URL=${{ secrets.IMAGE_AI_URL }}|IMAGE_AI_API_KEY=${{ secrets.IMAGE_AI_API_KEY }}|X_BEARER_TOKEN=${{ secrets.X_BEARER_TOKEN }}|INTERNAL_API_KEY=${{ secrets.INTERNAL_API_KEY }}|CORS_ORIGINS=[\"https://dev.hello-capstone.shop\"]|GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}|GCP_LOCATION=asia-northeast3|CLOUD_RUN_URL=${{ secrets.CLOUD_RUN_URL_STAGING }}|GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}"
