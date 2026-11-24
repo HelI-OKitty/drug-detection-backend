@@ -1,0 +1,58 @@
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from app.api.auth_api import router as auth_router
+from app.api.crawl_api import router as crawl_router
+from app.api.crawl_settings_api import router as crawl_settings_router
+from app.api.dashboard_api import router as dashboard_router
+from app.api.detection_api import router as detection_router
+from app.api.health_api import router as health_router
+from app.api.internal_api import router as internal_router
+from app.api.profile_api import router as profile_router
+from app.api.public_api import router as public_router
+from app.core.config import settings
+from app.db.mongo import create_indexes
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await create_indexes()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(health_router)
+app.include_router(auth_router)
+app.include_router(profile_router)
+app.include_router(detection_router)
+app.include_router(dashboard_router)
+app.include_router(public_router)
+app.include_router(internal_router)
+app.include_router(crawl_router)
+app.include_router(crawl_settings_router)
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+
+@app.get("/")
+def root():
+    return {"msg": "backend running"}

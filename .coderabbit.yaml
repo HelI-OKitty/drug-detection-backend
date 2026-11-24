@@ -1,0 +1,11 @@
+language: "ko-KR"
+
+reviews:
+  auto_review: true
+  high_level_summary: true
+  approve:
+    enabled: true
+    require_review: true
+
+chat:
+  auto_reply: true
